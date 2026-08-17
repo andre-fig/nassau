@@ -1,6 +1,6 @@
 import React from "react";
 import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
-import { GOOD_INFO, GoodItem, GoodType, GOODS } from "@nassau/game-engine";
+import { GOOD_INFO, GoodItem, GoodType } from "@nassau/game-engine";
 import { ITEM_SQUARE } from "./SquareDimensions";
 
 export function GoodsInventoryGrid({
@@ -18,20 +18,18 @@ export function GoodsInventoryGrid({
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.grid}
     >
-      {GOODS.map((type) => {
-        const info = GOOD_INFO[type];
-        const count = goods.filter((item) => item.type === type).length;
+      {goods.map((item) => {
+        const info = GOOD_INFO[item.type];
         return (
           <Pressable
-            key={type}
-            onPress={() => onSelect(type)}
-            style={[styles.tile, selected === type && styles.selected]}
+            key={item.id}
+            onPress={() => onSelect(item.type)}
+            style={[styles.tile, selected === item.type && styles.selected]}
           >
             <Text style={styles.icon}>{info.icon}</Text>
             <Text style={styles.name} numberOfLines={2}>
               {info.shortLabel}
             </Text>
-            <Text style={styles.count}>×{count}</Text>
           </Pressable>
         );
       })}
@@ -66,5 +64,4 @@ const styles = StyleSheet.create({
     minHeight: 29,
     textAlign: "center",
   },
-  count: { color: "#e1bd67", fontSize: 13, fontWeight: "800" },
 });
