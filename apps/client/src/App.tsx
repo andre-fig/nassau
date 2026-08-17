@@ -338,6 +338,7 @@ function GameScreen({
   setState: (next: GameState) => void;
 }) {
   const [selectedType, setSelectedType] = useState<GoodType>();
+  const [selectedPortIds, setSelectedPortIds] = useState<string[]>([]);
   const [sellType, setSellType] = useState<GoodType>();
   const [message, setMessage] = useState("");
   const current = state.players.find(
@@ -375,6 +376,7 @@ function GameScreen({
   const act = (action: Action) => {
     try {
       setSelectedType(undefined);
+      setSelectedPortIds([]);
       setSellType(undefined);
       setState(applyAction(state, action).state);
     } catch (error) {
@@ -395,6 +397,28 @@ function GameScreen({
         : saleCount === 3
           ? "Contrato Pequeno"
           : undefined;
+  const selectedPortItems = view.public.port.filter((item) =>
+    selectedPortIds.includes(item.id),
+  );
+  const selectedPortGoods = selectedPortItems.filter(
+    (item) => item.type !== "crew",
+  );
+  const selectedPortTypes = new Set(selectedPortGoods.map((item) => item.type));
+  const tradeGiveGoods = current.goods
+    .filter((item) => !selectedPortTypes.has(item.type))
+    .slice(0, selectedPortGoods.length);
+  const canTradePort =
+    selectedPortGoods.length >= 2 &&
+    selectedPortTypes.size === selectedPortGoods.length &&
+    tradeGiveGoods.length === selectedPortGoods.length;
+  const allSelectedCrew =
+    selectedPortItems.length > 0 &&
+    selectedPortItems.every((item) => item.type === "crew") &&
+    selectedPortItems.length ===
+      view.public.port.filter((item) => item.type === "crew").length;
+  const canTakePort =
+    (selectedPortItems.length === 1 && selectedPortItems[0].type !== "crew") ||
+    allSelectedCrew;
   return (
     <Shell>
       <OpponentHeader
@@ -404,7 +428,30 @@ function GameScreen({
         crew={view.opponent?.crew}
       />
       <Text style={styles.section}>PORTO DE NASSAU</Text>
-      <PortGrid items={view.public.port} />
+      <PortGrid
+        items={view.public.port}
+        selectedItemIds={selectedPortIds}
+        onSelectItem={(item) => {
+          if (item.type === "crew") {
+            setSelectedPortIds(
+              view.public.port
+                .filter((entry) => entry.type === "crew")
+                .map((entry) => entry.id),
+            );
+          } else {
+            setSelectedPortIds((currentIds) => {
+              const selectedGoods = currentIds.filter(
+                (id) =>
+                  view.public.port.find((entry) => entry.id === id)?.type !==
+                  "crew",
+              );
+              return selectedGoods.includes(item.id)
+                ? selectedGoods.filter((id) => id !== item.id)
+                : [...selectedGoods, item.id];
+            });
+          }
+        }}
+      />
       <View style={styles.handHeader}>
         <View>
           <Text style={styles.section}>SEU INVENTÁRIO (PRIVADO)</Text>
@@ -433,38 +480,35 @@ function GameScreen({
           action="take"
           label="PEGAR"
           onPress={() => {
-            const item = view.public.port.find(
-              (entry) => entry.type !== "crew",
-            );
-            if (item)
-              act({ type: "take-good", playerId: current.id, itemId: item.id });
+            if (allSelectedCrew) {
+              act({ type: "recruit-crew", playerId: current.id });
+            } else if (canTakePort) {
+              act({
+                type: "take-good",
+                playerId: current.id,
+                itemId: selectedPortItems[0].id,
+              });
+            }
           }}
           disabled={
-            current.goods.length >= 7 ||
-            !view.public.port.some((item) => item.type !== "crew")
+            !canTakePort || (!allSelectedCrew && current.goods.length >= 7)
           }
         />
         <GameActionButton
           action="trade"
           label="TROCAR"
           onPress={() => {
-            const take = view.public.port
-              .filter((item) => item.type !== "crew")
-              .slice(0, 2);
-            if (take.length >= 2 && current.goods.length > 0) {
+            if (canTradePort) {
               act({
                 type: "trade",
                 playerId: current.id,
-                takeItemIds: take.map((item) => item.id),
-                giveGoodIds: [current.goods[0].id],
+                takeItemIds: selectedPortGoods.map((item) => item.id),
+                giveGoodIds: tradeGiveGoods.map((item) => item.id),
                 giveCrewCount: 0,
               });
             }
           }}
-          disabled={
-            current.goods.length === 0 ||
-            view.public.port.filter((item) => item.type !== "crew").length < 2
-          }
+          disabled={!canTradePort}
         />
         <GameActionButton
           action="sell"
@@ -785,6 +829,7 @@ function OnlineMatch({
   onBack: () => void;
 }) {
   const [selected, setSelected] = useState<GoodType>();
+  const [selectedPortIds, setSelectedPortIds] = useState<string[]>([]);
   const [sellType, setSellType] = useState<GoodType>();
   const [message, setMessage] = useState("");
   const socket = useMemo(
@@ -803,6 +848,7 @@ function OnlineMatch({
   }, [socket, code, reconnectToken, onView]);
   const send = (action: Record<string, unknown>) => {
     setMessage("");
+    setSelectedPortIds([]);
     setSellType(undefined);
     socket.emit("game:action", {
       ...action,
@@ -826,6 +872,29 @@ function OnlineMatch({
         : count === 3
           ? "Contrato Pequeno"
           : undefined;
+  const selectedPortItems = view.public.port.filter((item) =>
+    selectedPortIds.includes(item.id),
+  );
+  const selectedPortGoods = selectedPortItems.filter(
+    (item) => item.type !== "crew",
+  );
+  const selectedPortTypes = new Set(selectedPortGoods.map((item) => item.type));
+  const tradeGiveGoods = view.me.goods
+    .filter((item) => !selectedPortTypes.has(item.type))
+    .slice(0, selectedPortGoods.length);
+  const canTradePort =
+    myTurn &&
+    selectedPortGoods.length >= 2 &&
+    selectedPortTypes.size === selectedPortGoods.length &&
+    tradeGiveGoods.length === selectedPortGoods.length;
+  const allSelectedCrew =
+    selectedPortItems.length > 0 &&
+    selectedPortItems.every((item) => item.type === "crew") &&
+    selectedPortItems.length ===
+      view.public.port.filter((item) => item.type === "crew").length;
+  const canTakePort =
+    (selectedPortItems.length === 1 && selectedPortItems[0].type !== "crew") ||
+    allSelectedCrew;
   if (view.phase === "finished")
     return (
       <Shell>
@@ -846,7 +915,30 @@ function OnlineMatch({
         crew={view.opponent?.crew}
       />
       <Text style={styles.section}>PORTO DE NASSAU</Text>
-      <PortGrid items={view.public.port} />
+      <PortGrid
+        items={view.public.port}
+        selectedItemIds={selectedPortIds}
+        onSelectItem={(item) => {
+          if (item.type === "crew") {
+            setSelectedPortIds(
+              view.public.port
+                .filter((entry) => entry.type === "crew")
+                .map((entry) => entry.id),
+            );
+          } else {
+            setSelectedPortIds((currentIds) => {
+              const selectedGoods = currentIds.filter(
+                (id) =>
+                  view.public.port.find((entry) => entry.id === id)?.type !==
+                  "crew",
+              );
+              return selectedGoods.includes(item.id)
+                ? selectedGoods.filter((id) => id !== item.id)
+                : [...selectedGoods, item.id];
+            });
+          }
+        }}
+      />
       <View style={styles.handHeader}>
         <View>
           <Text style={styles.section}>SEU INVENTÁRIO (PRIVADO)</Text>
@@ -876,37 +968,31 @@ function OnlineMatch({
           action="take"
           label="PEGAR"
           onPress={() => {
-            const item = view.public.port.find(
-              (entry) => entry.type !== "crew",
-            );
-            if (item) send({ type: "take-good", itemId: item.id });
+            if (allSelectedCrew) {
+              send({ type: "recruit-crew" });
+            } else if (canTakePort) {
+              send({ type: "take-good", itemId: selectedPortItems[0].id });
+            }
           }}
           disabled={
             !myTurn ||
-            view.me.goods.length >= 7 ||
-            !view.public.port.some((item) => item.type !== "crew")
+            !canTakePort ||
+            (!allSelectedCrew && view.me.goods.length >= 7)
           }
         />
         <GameActionButton
           action="trade"
           label="TROCAR"
           onPress={() => {
-            const take = view.public.port
-              .filter((item) => item.type !== "crew")
-              .slice(0, 2);
-            if (take.length >= 2 && view.me.goods.length > 0)
+            if (canTradePort)
               send({
                 type: "trade",
-                takeItemIds: take.map((item) => item.id),
-                giveGoodIds: [view.me.goods[0].id],
+                takeItemIds: selectedPortGoods.map((item) => item.id),
+                giveGoodIds: tradeGiveGoods.map((item) => item.id),
                 giveCrewCount: 0,
               });
           }}
-          disabled={
-            !myTurn ||
-            view.me.goods.length === 0 ||
-            view.public.port.filter((item) => item.type !== "crew").length < 2
-          }
+          disabled={!canTradePort}
         />
         <GameActionButton
           action="sell"

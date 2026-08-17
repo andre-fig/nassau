@@ -1,9 +1,17 @@
 import React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Pressable, StyleSheet, Text, View } from "react-native";
 import { GOOD_INFO, Item } from "@nassau/game-engine";
 import { ITEM_SQUARE } from "./SquareDimensions";
 
-export function PortGrid({ items }: { items: Item[] }) {
+export function PortGrid({
+  items,
+  selectedItemIds,
+  onSelectItem,
+}: {
+  items: Item[];
+  selectedItemIds: string[];
+  onSelectItem: (item: Item) => void;
+}) {
   const rows = [items.slice(0, 2), items.slice(2, 5)];
 
   return (
@@ -14,9 +22,18 @@ export function PortGrid({ items }: { items: Item[] }) {
             const isCrew = item.type === "crew";
             const info = isCrew ? undefined : GOOD_INFO[item.type];
             return (
-              <View
+              <Pressable
                 key={item.id}
-                style={[styles.tile, isCrew && styles.crewTile]}
+                accessibilityRole="button"
+                accessibilityLabel={`Selecionar ${
+                  isCrew ? "tripulação" : info?.shortLabel
+                }`}
+                onPress={() => onSelectItem(item)}
+                style={[
+                  styles.tile,
+                  isCrew && styles.crewTile,
+                  selectedItemIds.includes(item.id) && styles.selectedTile,
+                ]}
               >
                 <Text style={styles.tileIcon}>
                   {isCrew ? "👥" : info?.icon}
@@ -24,7 +41,7 @@ export function PortGrid({ items }: { items: Item[] }) {
                 <Text style={styles.tileText} numberOfLines={2}>
                   {isCrew ? "Tripulação" : info?.shortLabel}
                 </Text>
-              </View>
+              </Pressable>
             );
           })}
         </View>
@@ -51,6 +68,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   crewTile: { backgroundColor: "#d8e0d1" },
+  selectedTile: { borderColor: "#e0bd69", borderWidth: 3 },
   tileIcon: { color: "#8a542d", fontSize: 32, lineHeight: 38 },
   tileText: {
     color: "#193945",
