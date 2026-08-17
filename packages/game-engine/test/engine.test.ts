@@ -57,18 +57,40 @@ describe("Nassau game engine", () => {
     ).toBe(true);
   });
 
-  it("rejects a one-for-one trade and crew as a received item", () => {
+  it("rejects crew as a received item", () => {
     const state = game();
-    const goods = state.port.filter((item) => item.type !== "crew");
+    const crew = state.port.find((item) => item.type === "crew")!;
     expect(() =>
       applyAction(state, {
         type: "trade",
         playerId: state.currentPlayerId,
-        takeItemIds: [goods[0].id],
+        takeItemIds: [crew.id],
         giveGoodIds: [],
         giveCrewCount: 1,
       }),
     ).toThrow();
+  });
+
+  it("allows a one-for-one trade", () => {
+    const state = game();
+    const player = state.players.find(
+      (candidate) => candidate.id === state.currentPlayerId,
+    )!;
+    const portGood = { id: "port-jewel", type: "royal-jewels" as const };
+    state.port = [portGood];
+    player.goods = [{ id: "give-rum", type: "rum" }];
+    const result = applyAction(state, {
+      type: "trade",
+      playerId: player.id,
+      takeItemIds: [portGood.id],
+      giveGoodIds: ["give-rum"],
+      giveCrewCount: 0,
+    });
+    expect(result.event.type).toBe("trade-complete");
+    expect(
+      result.state.players.find((candidate) => candidate.id === player.id)
+        ?.goods,
+    ).toContainEqual(portGood);
   });
 
   it("allows multiple units of the same good to be traded for crew", () => {

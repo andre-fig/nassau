@@ -359,13 +359,17 @@ export function getLegalActions(
   const take = portGoods
     .slice(0, Math.min(2, portGoods.length))
     .map((entry) => entry.id);
-  if (take.length === 2 && player.goods.length >= 1)
+  const giveGoodIds = player.goods
+    .slice(0, take.length)
+    .map((entry) => entry.id);
+  const giveCrewCount = take.length - giveGoodIds.length;
+  if (take.length >= 1 && giveCrewCount <= player.crew)
     actions.push({
       type: "trade",
       playerId,
       takeItemIds: take,
-      giveGoodIds: [player.goods[0].id],
-      giveCrewCount: 1,
+      giveGoodIds,
+      giveCrewCount,
     });
   GOODS.forEach((type) => {
     const count = player.goods.filter((entry) => entry.type === type).length;
@@ -417,11 +421,11 @@ export function applyAction(input: GameState, action: Action): ActionResult {
     };
   } else if (action.type === "trade") {
     if (
-      action.takeItemIds.length < 2 ||
+      action.takeItemIds.length < 1 ||
       action.takeItemIds.length !==
         action.giveGoodIds.length + action.giveCrewCount
     )
-      throw new Error("A trade must exchange two or more items one for one");
+      throw new Error("A trade must exchange one or more items one for one");
     if (new Set(action.takeItemIds).size !== action.takeItemIds.length)
       throw new Error("A port item cannot be selected twice");
     const taken = action.takeItemIds.map((id) =>
