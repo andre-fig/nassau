@@ -26,7 +26,7 @@ export const GOOD_INFO: Record<
     label: "Joias Reais",
     shortLabel: "Joias Reais",
     icon: "👑",
-    supply: 5,
+    supply: 6,
     values: [7, 7, 5, 5],
     minimum: 2,
   },
@@ -34,7 +34,7 @@ export const GOOD_INFO: Record<
     label: "Baús de Ouro",
     shortLabel: "Baús de Ouro",
     icon: "🪎",
-    supply: 5,
+    supply: 6,
     values: [6, 6, 5, 5],
     minimum: 2,
   },
@@ -42,7 +42,7 @@ export const GOOD_INFO: Record<
     label: "Prataria Espanhola",
     shortLabel: "Prataria Espanhola",
     icon: "🥈",
-    supply: 5,
+    supply: 6,
     values: [5, 5, 5, 5],
     minimum: 2,
   },
@@ -50,7 +50,7 @@ export const GOOD_INFO: Record<
     label: "Rum",
     shortLabel: "Rum",
     icon: "🛢️",
-    supply: 5,
+    supply: 8,
     values: [5, 3, 3, 2, 2],
     minimum: 1,
   },
@@ -58,7 +58,7 @@ export const GOOD_INFO: Record<
     label: "Tabaco",
     shortLabel: "Tabaco",
     icon: "🍂",
-    supply: 6,
+    supply: 8,
     values: [5, 3, 3, 2, 2, 1],
     minimum: 1,
   },
@@ -66,13 +66,13 @@ export const GOOD_INFO: Record<
     label: "Mantimentos",
     shortLabel: "Mantimentos",
     icon: "📦",
-    supply: 8,
+    supply: 10,
     values: [4, 3, 2, 1, 1, 1, 1, 1],
     minimum: 1,
   },
 };
 
-export const CREW_SUPPLY = 9;
+export const CREW_SUPPLY = 11;
 export type GamePhase = "playing" | "finished";
 
 export type GoodItem = { id: string; type: GoodType };
@@ -121,7 +121,7 @@ export type GameResult = {
       contractPrestige: number;
     }
   >;
-  reason: "two-empty-tracks" | "stock-empty";
+  reason: "three-empty-tracks" | "stock-empty";
 };
 
 export type Action =
@@ -292,7 +292,7 @@ const replenish = (state: GameState, count: number) => {
 const emptyTracks = (state: GameState) =>
   GOODS.filter((type) => state.values[type].length === 0);
 const finishIfNeeded = (state: GameState, reason: GameResult["reason"]) => {
-  const tracksEmpty = emptyTracks(state).length >= 2;
+  const tracksEmpty = emptyTracks(state).length >= 3;
   const stockEmpty = reason === "stock-empty";
   if (!tracksEmpty && !stockEmpty) return false;
   const ranked = state.players.map((player) => ({
@@ -334,7 +334,7 @@ const finishIfNeeded = (state: GameState, reason: GameResult["reason"]) => {
     winnerId: tied ? undefined : ordered[0].id,
     draw: tied,
     players: ranked,
-    reason: tracksEmpty ? "two-empty-tracks" : "stock-empty",
+    reason: tracksEmpty ? "three-empty-tracks" : "stock-empty",
   };
   return true;
 };
@@ -523,7 +523,10 @@ export function applyAction(input: GameState, action: Action): ActionResult {
   }
   state.actionLog.push(`${player.displayName}: ${action.type}`);
   if (
-    finishIfNeeded(state, endsBecauseStock ? "stock-empty" : "two-empty-tracks")
+    finishIfNeeded(
+      state,
+      endsBecauseStock ? "stock-empty" : "three-empty-tracks",
+    )
   )
     event = {
       type: "game-finished",

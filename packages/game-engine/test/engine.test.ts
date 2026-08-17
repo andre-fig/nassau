@@ -20,14 +20,14 @@ const game = (seed = 11) =>
   );
 
 describe("Nassau game engine", () => {
-  it("creates the deterministic setup with 43 items and a five-item port", () => {
+  it("creates the deterministic setup with 55 items and a five-item port", () => {
     const state = game();
     expect(state.port).toHaveLength(5);
     expect(
       state.deck.length +
         state.port.length +
         state.players.reduce((sum, p) => sum + p.goods.length + p.crew, 0),
-    ).toBe(43);
+    ).toBe(55);
     expect(state.port.filter((item) => item.type === "crew")).toHaveLength(3);
     expect(state).toEqual(game());
   });
@@ -196,7 +196,7 @@ describe("Nassau game engine", () => {
     ).toHaveLength(0);
   });
 
-  it("finishes after two value tracks are empty and awards majority crew", () => {
+  it("finishes after three value tracks are empty and awards majority crew", () => {
     const state = game();
     const player = state.players.find((p) => p.id === state.currentPlayerId)!;
     player.goods = [
@@ -208,6 +208,7 @@ describe("Nassau game engine", () => {
     ];
     state.values.rum = [1];
     state.values.tobacco = [];
+    state.values.provisions = [];
     player.crew = 4;
     state.players.find((candidate) => candidate.id !== player.id)!.crew = 1;
     const result = applyAction(state, {
@@ -217,6 +218,7 @@ describe("Nassau game engine", () => {
       quantity: 5,
     });
     expect(result.state.phase).toBe("finished");
+    expect(result.state.result?.reason).toBe("three-empty-tracks");
     expect(
       result.state.result?.players.find((p) => p.id === player.id)?.crewBonus,
     ).toBe(5);
