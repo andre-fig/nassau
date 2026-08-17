@@ -5,26 +5,28 @@ import {
   GOOD_INFO,
   PlayerId,
   PlayerView,
-  getLegalActions,
-  getSalePreview,
 } from "@nassau/game-engine";
 
 export type Difficulty = "easy" | "normal" | "hard";
 
 const saleScore = (
   view: PlayerView,
-  playerId: PlayerId,
   type: GoodType,
+  quantity: number,
   difficulty: Difficulty,
 ) => {
   const count = view.me.goods.filter((item) => item.type === type).length;
-  if (count < GOOD_INFO[type].minimum) return -Infinity;
-  const quantity = difficulty === "easy" ? GOOD_INFO[type].minimum : count;
+  if (quantity < GOOD_INFO[type].minimum || quantity > count) return -Infinity;
   const preview = getSalePreviewFromView(view, type, quantity);
+  const remainingValue = view.me.goods
+    .filter((item) => item.type !== type)
+    .reduce((sum, item) => sum + valueOfType(view, item.type) * 0.45, 0);
   return (
     preview.total +
-    (count >= 3 ? 4 : 0) +
-    (view.public.values[type].length <= quantity ? 3 : 0)
+    (quantity >= 3 ? 2 : 0) +
+    (view.public.values[type].length <= quantity ? 4 : 0) +
+    remainingValue +
+    (difficulty === "hard" && quantity === count ? 1 : 0)
   );
 };
 
@@ -57,18 +59,24 @@ export function chooseAction(
     (action): action is Extract<Action, { type: "trade" }> =>
       action.type === "trade",
   );
+  if (difficulty === "hard") {
+    const best = legal
+      .map((action) => ({ action, score: hardActionScore(view, action) }))
+      .sort((a, b) => b.score - a.score)[0];
+    return best
+      ? { ...best.action, clientActionId: `ai-${view.public.turn}` }
+      : undefined;
+  }
   if (sells.length > 0) {
     const ranked = sells
       .map((action) => ({
         action,
-        score: saleScore(view, view.me.id, action.goodType, difficulty),
+        score: saleScore(view, action.goodType, action.quantity, difficulty),
       }))
       .sort((a, b) => b.score - a.score);
     if (difficulty !== "easy" || ranked[0].score > 6)
       return { ...ranked[0].action, clientActionId: `ai-${view.public.turn}` };
   }
-  if (difficulty === "hard" && trades.length > 0)
-    return { ...trades[0], clientActionId: `ai-${view.public.turn}` };
   const recruit = legal.find((action) => action.type === "recruit-crew");
   if (
     recruit &&
@@ -85,11 +93,90 @@ export function chooseAction(
     : legal[0];
 }
 
+const valueOfType = (view: PlayerView, type: GoodType) =>
+  view.public.values[type][0] ?? 0;
+
+const collectionBonus = (view: PlayerView, types: GoodType[]) => {
+  const counts = new Map<GoodType, number>();
+  view.me.goods.forEach((item) => {
+    counts.set(item.type, (counts.get(item.type) ?? 0) + 1);
+  });
+  return types.reduce((bonus, type) => {
+    const count = counts.get(type) ?? 0;
+    counts.set(type, count + 1);
+    return bonus + (count === 1 ? 2 : count === 2 ? 3 : 1);
+  }, 0);
+};
+
+const hardActionScore = (view: PlayerView, action: Action) => {
+  if (action.type === "sell") {
+    return saleScore(view, action.goodType, action.quantity, "hard");
+  }
+  if (action.type === "take-good") {
+    const item = view.public.port.find((entry) => entry.id === action.itemId);
+    if (!item || item.type === "crew") return -Infinity;
+    return (
+      valueOfType(view, item.type) * 2 +
+      collectionBonus(view, [item.type]) +
+      (view.me.goods.length >= 6 ? 1 : 0)
+    );
+  }
+  if (action.type === "recruit-crew") {
+    const crewCount = view.public.port.filter(
+      (entry) => entry.type === "crew",
+    ).length;
+    const opponentCrew = view.opponent?.crew ?? 0;
+    const crewAfter = view.me.crew + crewCount;
+    return (
+      crewCount * 4 +
+      (crewAfter > opponentCrew ? 4 : 0) +
+      (view.me.crew <= opponentCrew ? 2 : 0)
+    );
+  }
+  const received = action.takeItemIds
+    .map((id) => view.public.port.find((entry) => entry.id === id))
+    .filter(
+      (
+        entry,
+      ): entry is Extract<
+        (typeof view.public.port)[number],
+        { type: GoodType }
+      > => Boolean(entry && entry.type !== "crew"),
+    );
+  const given = action.giveGoodIds
+    .map((id) => view.me.goods.find((entry) => entry.id === id))
+    .filter((entry): entry is NonNullable<typeof entry> => Boolean(entry));
+  const receivedValue = received.reduce(
+    (sum, item) => sum + valueOfType(view, item.type) * 1.9,
+    0,
+  );
+  const givenValue = given.reduce(
+    (sum, item) => sum + valueOfType(view, item.type) * 1.1,
+    0,
+  );
+  const crewCost = action.giveCrewCount * 4;
+  const crewAfter = view.me.crew - action.giveCrewCount;
+  const crewLeadBonus =
+    crewAfter > (view.opponent?.crew ?? 0)
+      ? 2
+      : crewAfter < (view.opponent?.crew ?? 0)
+        ? -2
+        : 0;
+  return (
+    receivedValue -
+    givenValue -
+    crewCost +
+    collectionBonus(
+      view,
+      received.map((item) => item.type),
+    ) +
+    crewLeadBonus
+  );
+};
+
 const valueOf = (view: PlayerView, itemId: string) => {
   const item = view.public.port.find((entry) => entry.id === itemId);
-  return item && item.type !== "crew"
-    ? (view.public.values[item.type][0] ?? 0)
-    : 0;
+  return item && item.type !== "crew" ? valueOfType(view, item.type) : 0;
 };
 
 function getLegalActionsFromView(view: PlayerView): Action[] {
@@ -104,43 +191,74 @@ function getLegalActionsFromView(view: PlayerView): Action[] {
   });
   if (view.public.port.some((entry) => entry.type === "crew"))
     actions.push({ type: "recruit-crew", playerId: view.me.id });
-  const portGoods = view.public.port.filter((entry) => entry.type !== "crew");
-  const takeItemIds = portGoods
-    .slice(0, Math.min(2, portGoods.length))
-    .map((entry) => entry.id);
-  const takenTypes = new Set(
-    portGoods.slice(0, takeItemIds.length).map((entry) => entry.type),
+  const portGoods = view.public.port.filter(
+    (
+      entry,
+    ): entry is Extract<
+      (typeof view.public.port)[number],
+      { type: GoodType }
+    > => entry.type !== "crew",
   );
-  const giveGoodIds = view.me.goods
-    .filter((entry) => !takenTypes.has(entry.type))
-    .slice(0, takeItemIds.length)
-    .map((entry) => entry.id);
-  const giveCrewCount = takeItemIds.length - giveGoodIds.length;
-  if (
-    takeItemIds.length >= 1 &&
-    giveCrewCount >= 0 &&
-    giveCrewCount <= view.me.crew &&
-    view.me.goods.length - giveGoodIds.length + takeItemIds.length <= 7
-  ) {
-    actions.push({
-      type: "trade",
-      playerId: view.me.id,
-      takeItemIds,
-      giveGoodIds,
-      giveCrewCount,
-    });
+  for (const takeItems of combinations(portGoods)) {
+    const takenTypes = new Set(takeItems.map((entry) => entry.type));
+    const compatibleGoods = view.me.goods.filter(
+      (entry) => !takenTypes.has(entry.type),
+    );
+    const minimumGoods = Math.max(0, takeItems.length - view.me.crew);
+    const maximumGoods = Math.min(takeItems.length, compatibleGoods.length);
+    for (
+      let giveCount = minimumGoods;
+      giveCount <= maximumGoods;
+      giveCount += 1
+    ) {
+      for (const giveGoods of combinations(compatibleGoods, giveCount)) {
+        if (view.me.goods.length - giveGoods.length + takeItems.length <= 7) {
+          actions.push({
+            type: "trade",
+            playerId: view.me.id,
+            takeItemIds: takeItems.map((entry) => entry.id),
+            giveGoodIds: giveGoods.map((entry) => entry.id),
+            giveCrewCount: takeItems.length - giveGoods.length,
+          });
+        }
+      }
+    }
   }
   for (const type of Object.keys(GOOD_INFO) as GoodType[]) {
     const count = view.me.goods.filter((entry) => entry.type === type).length;
-    if (count >= GOOD_INFO[type].minimum)
+    for (
+      let quantity = GOOD_INFO[type].minimum;
+      quantity <= Math.min(count, view.public.values[type].length);
+      quantity += 1
+    ) {
       actions.push({
         type: "sell",
         playerId: view.me.id,
         goodType: type,
-        quantity: count,
+        quantity,
       });
+    }
   }
   return actions;
+}
+
+function combinations<T>(items: T[], exactSize?: number): T[][] {
+  const result: T[][] = [];
+  const visit = (start: number, selected: T[]) => {
+    if (selected.length > 0 && exactSize === undefined)
+      result.push([...selected]);
+    if (exactSize !== undefined && selected.length === exactSize) {
+      result.push([...selected]);
+      return;
+    }
+    for (let index = start; index < items.length; index += 1) {
+      selected.push(items[index]);
+      visit(index + 1, selected);
+      selected.pop();
+    }
+  };
+  visit(0, []);
+  return result;
 }
 
 export function chooseActionFromState(
