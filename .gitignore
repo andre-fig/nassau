@@ -7,3 +7,13 @@ build
 !.env.example
 coverage
 *.log
+apps/unity/[Ll]ibrary/
+apps/unity/[Tt]emp/
+apps/unity/[Oo]bj/
+apps/unity/[Bb]uild/
+apps/unity/[Bb]uilds/
+apps/unity/[Ll]ogs/
+apps/unity/[Uu]ser[Ss]ettings/
+apps/unity/MemoryCaptures/
+apps/unity/*.csproj
+apps/unity/*.sln

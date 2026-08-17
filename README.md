@@ -71,7 +71,11 @@ pnpm --filter @nassau/api build
 pnpm --filter @nassau/client build
 ```
 
-Os testes do engine cobrem setup com 43 itens, Porto, privacidade, aquisição, troca, mínimo de venda, valores decrescentes, contratos, esgotamento de trilhas e bônus de Tripulação. O próximo passo de produção é adicionar testes de integração Socket.IO usando o mesmo contrato de `RoomsService`.
+Os testes do engine cobrem setup com 55 itens, Porto, privacidade, aquisição, troca, mínimo de venda, valores decrescentes, contratos, esgotamento de trilhas e bônus de Tripulação. O próximo passo de produção é adicionar testes de integração Socket.IO usando o mesmo contrato de `RoomsService`.
+
+## Cliente Unity
+
+O projeto Unity inicial fica em [`apps/unity`](apps/unity). Ele porta o motor offline e a IA para C#, reaproveita o vídeo de carregamento e o verso das cartas, e monta a tela do jogo por código. Para abrir, instale Unity `2022.3 LTS` e adicione essa pasta no Unity Hub. A integração online continua planejada sobre a API NestJS existente; o cliente Expo segue como cliente online funcional durante essa migração.
 
 ## Builds
 
