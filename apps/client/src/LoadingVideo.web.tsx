@@ -5,7 +5,8 @@ export function LoadingVideo({ style }: { style?: object }) {
   return React.createElement('video', {
     autoPlay: true,
     loop: true,
-    muted: true,
+    muted: false,
+    volume: 1,
     playsInline: true,
     src: source,
     style: { ...style, objectFit: 'cover' },
