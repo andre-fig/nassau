@@ -19,12 +19,12 @@ export const GOOD_INFO: Record<GoodType, {
   values: number[];
   minimum: number;
 }> = {
-  'royal-jewels': { label: 'Joias Reais', shortLabel: 'Joias', icon: '♛', supply: 5, values: [7, 7, 5, 5], minimum: 2 },
-  'gold-chests': { label: 'Baús de Ouro', shortLabel: 'Baús', icon: '▣', supply: 5, values: [6, 6, 5, 5], minimum: 2 },
-  'spanish-silver': { label: 'Prataria Espanhola', shortLabel: 'Prataria', icon: '◈', supply: 5, values: [5, 5, 5, 5], minimum: 2 },
-  rum: { label: 'Rum', shortLabel: 'Rum', icon: '◉', supply: 5, values: [5, 3, 3, 2, 2], minimum: 1 },
-  tobacco: { label: 'Tabaco', shortLabel: 'Tabaco', icon: '❧', supply: 6, values: [5, 3, 3, 2, 2, 1], minimum: 1 },
-  provisions: { label: 'Mantimentos', shortLabel: 'Mantimentos', icon: '◇', supply: 8, values: [4, 3, 2, 1, 1, 1, 1, 1], minimum: 1 },
+  'royal-jewels': { label: 'Joias Reais', shortLabel: 'Joias', icon: '👑', supply: 5, values: [7, 7, 5, 5], minimum: 2 },
+  'gold-chests': { label: 'Baús de Ouro', shortLabel: 'Baús', icon: '🪎', supply: 5, values: [6, 6, 5, 5], minimum: 2 },
+  'spanish-silver': { label: 'Prataria Espanhola', shortLabel: 'Prataria', icon: '🥈', supply: 5, values: [5, 5, 5, 5], minimum: 2 },
+  rum: { label: 'Rum', shortLabel: 'Rum', icon: '🛢️', supply: 5, values: [5, 3, 3, 2, 2], minimum: 1 },
+  tobacco: { label: 'Tabaco', shortLabel: 'Tabaco', icon: '🍂', supply: 6, values: [5, 3, 3, 2, 2, 1], minimum: 1 },
+  provisions: { label: 'Mantimentos', shortLabel: 'Mantimentos', icon: '📦', supply: 8, values: [4, 3, 2, 1, 1, 1, 1, 1], minimum: 1 },
 };
 
 export const CREW_SUPPLY = 9;
