@@ -24,27 +24,27 @@ export const GOOD_INFO: Record<
 > = {
   "royal-jewels": {
     label: "Joias Reais",
-    shortLabel: "Joias",
+    shortLabel: "Joias Reais",
     icon: "👑",
     supply: 5,
     values: [7, 7, 5, 5],
-    minimum: 1,
+    minimum: 2,
   },
   "gold-chests": {
     label: "Baús de Ouro",
-    shortLabel: "Baús",
+    shortLabel: "Baús de Ouro",
     icon: "🪎",
     supply: 5,
     values: [6, 6, 5, 5],
-    minimum: 1,
+    minimum: 2,
   },
   "spanish-silver": {
     label: "Prataria Espanhola",
-    shortLabel: "Prataria",
+    shortLabel: "Prataria Espanhola",
     icon: "🥈",
     supply: 5,
     values: [5, 5, 5, 5],
-    minimum: 1,
+    minimum: 2,
   },
   rum: {
     label: "Rum",
@@ -593,8 +593,9 @@ export function getSalePreview(
     contractPrestige,
     total: available.reduce((sum, value) => sum + value, 0) + contractPrestige,
     canSell:
-      player.goods.filter((entry) => entry.type === goodType).length >=
-      Math.max(GOOD_INFO[goodType].minimum, quantity),
+      quantity >= GOOD_INFO[goodType].minimum &&
+      quantity <=
+        player.goods.filter((entry) => entry.type === goodType).length,
   };
 }
 
