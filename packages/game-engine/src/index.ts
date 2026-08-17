@@ -50,6 +50,7 @@ export type PublicPlayer = {
   prestige: number;
   contracts: number;
   rewards: number;
+  crew: number;
 };
 export type GameState = {
   id: string;
@@ -261,7 +262,7 @@ export function getPlayerView(state: GameState, playerId: PlayerId): PlayerView 
     gameId: state.id,
     phase: state.phase,
     me: clone(me),
-    opponent: other ? { id: other.id, displayName: other.displayName, goodsCount: other.goods.length, prestige: other.prestige, contracts: other.contracts, rewards: other.rewards } : undefined,
+    opponent: other ? { id: other.id, displayName: other.displayName, goodsCount: other.goods.length, prestige: other.prestige, contracts: other.contracts, rewards: other.rewards, crew: other.crew } : undefined,
     public: { port: clone(state.port), values: clone(state.values), currentPlayerId: state.currentPlayerId, turn: state.turn, stockRemaining: state.deck.length, emptyTracks: emptyTracks(state), actionLog: [...state.actionLog] },
     result: clone(state.result),
   };

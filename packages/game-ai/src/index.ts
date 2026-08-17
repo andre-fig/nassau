@@ -67,7 +67,7 @@ const requireView = (state: GameState, playerId: PlayerId) => {
   const other = state.players.find((player) => player.id !== playerId);
   return {
     gameId: state.id, phase: state.phase, me: me as PlayerView['me'],
-    opponent: other ? { id: other.id, displayName: other.displayName, goodsCount: other.goods.length, prestige: other.prestige, contracts: other.contracts, rewards: other.rewards } : undefined,
+    opponent: other ? { id: other.id, displayName: other.displayName, goodsCount: other.goods.length, prestige: other.prestige, contracts: other.contracts, rewards: other.rewards, crew: other.crew } : undefined,
     public: { port: state.port, values: state.values, currentPlayerId: state.currentPlayerId, turn: state.turn, stockRemaining: state.deck.length, emptyTracks: [], actionLog: state.actionLog }, result: state.result,
   } as PlayerView;
 };

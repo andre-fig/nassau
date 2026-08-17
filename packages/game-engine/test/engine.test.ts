@@ -18,9 +18,8 @@ describe('Nassau game engine', () => {
     expect(view.me.goods).toBeDefined();
     expect(view.opponent).toMatchObject({ goodsCount: expect.any(Number) });
     expect(view.opponent).not.toHaveProperty('goods');
-    expect(view.opponent).not.toHaveProperty('crew');
     expect(view).not.toHaveProperty('opponent.goods');
-    expect(view).not.toHaveProperty('opponent.crew');
+    expect(view.opponent).toMatchObject({ crew: expect.any(Number) });
   });
 
   it('takes goods and replenishes the port', () => {
