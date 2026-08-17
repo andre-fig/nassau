@@ -404,21 +404,36 @@ function GameScreen({
     (item) => item.type !== "crew",
   );
   const selectedPortTypes = new Set(selectedPortGoods.map((item) => item.type));
-  const tradeGiveGoods = current.goods
-    .filter((item) => !selectedPortTypes.has(item.type))
-    .slice(0, selectedPortGoods.length);
+  const selectedInventoryGoods = current.goods.filter((item) =>
+    selectedGoodIds.includes(item.id),
+  );
+  const tradeGiveGoods = selectedInventoryGoods.filter(
+    (item) => !selectedPortTypes.has(item.type),
+  );
+  const tradeCrewCount = selectedPortGoods.length - tradeGiveGoods.length;
   const canTradePort =
     selectedPortGoods.length >= 1 &&
+    selectedPortItems.length === selectedPortGoods.length &&
     selectedPortTypes.size === selectedPortGoods.length &&
-    tradeGiveGoods.length === selectedPortGoods.length;
+    tradeGiveGoods.length === selectedInventoryGoods.length &&
+    tradeCrewCount >= 0 &&
+    tradeCrewCount <= current.crew;
   const allSelectedCrew =
     selectedPortItems.length > 0 &&
     selectedPortItems.every((item) => item.type === "crew") &&
     selectedPortItems.length ===
       view.public.port.filter((item) => item.type === "crew").length;
   const canTakePort =
-    (selectedPortItems.length === 1 && selectedPortItems[0].type !== "crew") ||
-    allSelectedCrew;
+    (selectedGoodIds.length === 0 &&
+      selectedPortItems.length === 1 &&
+      selectedPortItems[0].type !== "crew") ||
+    (selectedGoodIds.length === 0 && allSelectedCrew);
+  const canSellInventory =
+    selectedPortItems.length === 0 &&
+    selectedGoodIds.length > 0 &&
+    Boolean(selectedType) &&
+    selectedGoodIds.length >=
+      (selectedType ? GOOD_INFO[selectedType].minimum : 1);
   return (
     <Shell>
       <OpponentHeader
@@ -432,9 +447,9 @@ function GameScreen({
         items={view.public.port}
         selectedItemIds={selectedPortIds}
         onSelectItem={(item) => {
-          setSelectedType(undefined);
-          setSelectedGoodIds([]);
           if (item.type === "crew") {
+            setSelectedType(undefined);
+            setSelectedGoodIds([]);
             const crewIds = view.public.port
               .filter((entry) => entry.type === "crew")
               .map((entry) => entry.id);
@@ -479,8 +494,10 @@ function GameScreen({
         goods={current.goods}
         selectedItemIds={selectedGoodIds}
         onSelectItem={(item) => {
-          setSelectedPortIds([]);
           setSellType(undefined);
+          if (selectedPortItems.some((entry) => entry.type === "crew")) {
+            setSelectedPortIds([]);
+          }
           if (selectedGoodIds.includes(item.id)) {
             const nextIds = selectedGoodIds.filter((id) => id !== item.id);
             setSelectedGoodIds(nextIds);
@@ -523,7 +540,7 @@ function GameScreen({
                 playerId: current.id,
                 takeItemIds: selectedPortGoods.map((item) => item.id),
                 giveGoodIds: tradeGiveGoods.map((item) => item.id),
-                giveCrewCount: 0,
+                giveCrewCount: tradeCrewCount,
               });
             }
           }}
@@ -535,12 +552,7 @@ function GameScreen({
           onPress={() => {
             if (selectedType) setSellType(selectedType);
           }}
-          disabled={
-            selectedPortItems.length > 0 ||
-            !selectedType ||
-            selectedGoodIds.length <
-              (selectedType ? GOOD_INFO[selectedType].minimum : 1)
-          }
+          disabled={!canSellInventory}
         />
       </View>
       <SellModal
@@ -900,22 +912,36 @@ function OnlineMatch({
     (item) => item.type !== "crew",
   );
   const selectedPortTypes = new Set(selectedPortGoods.map((item) => item.type));
-  const tradeGiveGoods = view.me.goods
-    .filter((item) => !selectedPortTypes.has(item.type))
-    .slice(0, selectedPortGoods.length);
+  const selectedInventoryGoods = view.me.goods.filter((item) =>
+    selectedGoodIds.includes(item.id),
+  );
+  const tradeGiveGoods = selectedInventoryGoods.filter(
+    (item) => !selectedPortTypes.has(item.type),
+  );
+  const tradeCrewCount = selectedPortGoods.length - tradeGiveGoods.length;
   const canTradePort =
     myTurn &&
     selectedPortGoods.length >= 1 &&
+    selectedPortItems.length === selectedPortGoods.length &&
     selectedPortTypes.size === selectedPortGoods.length &&
-    tradeGiveGoods.length === selectedPortGoods.length;
+    tradeGiveGoods.length === selectedInventoryGoods.length &&
+    tradeCrewCount >= 0 &&
+    tradeCrewCount <= view.me.crew;
   const allSelectedCrew =
     selectedPortItems.length > 0 &&
     selectedPortItems.every((item) => item.type === "crew") &&
     selectedPortItems.length ===
       view.public.port.filter((item) => item.type === "crew").length;
   const canTakePort =
-    (selectedPortItems.length === 1 && selectedPortItems[0].type !== "crew") ||
-    allSelectedCrew;
+    selectedGoodIds.length === 0 &&
+    ((selectedPortItems.length === 1 && selectedPortItems[0].type !== "crew") ||
+      allSelectedCrew);
+  const canSellInventory =
+    myTurn &&
+    selectedPortItems.length === 0 &&
+    selectedGoodIds.length > 0 &&
+    Boolean(selected) &&
+    selectedGoodIds.length >= (selected ? GOOD_INFO[selected].minimum : 1);
   if (view.phase === "finished")
     return (
       <Shell>
@@ -940,9 +966,9 @@ function OnlineMatch({
         items={view.public.port}
         selectedItemIds={selectedPortIds}
         onSelectItem={(item) => {
-          setSelected(undefined);
-          setSelectedGoodIds([]);
           if (item.type === "crew") {
+            setSelected(undefined);
+            setSelectedGoodIds([]);
             const crewIds = view.public.port
               .filter((entry) => entry.type === "crew")
               .map((entry) => entry.id);
@@ -988,8 +1014,10 @@ function OnlineMatch({
         goods={view.me.goods}
         selectedItemIds={selectedGoodIds}
         onSelectItem={(item) => {
-          setSelectedPortIds([]);
           setSellType(undefined);
+          if (selectedPortItems.some((entry) => entry.type === "crew")) {
+            setSelectedPortIds([]);
+          }
           if (selectedGoodIds.includes(item.id)) {
             const nextIds = selectedGoodIds.filter((id) => id !== item.id);
             setSelectedGoodIds(nextIds);
@@ -1029,7 +1057,7 @@ function OnlineMatch({
                 type: "trade",
                 takeItemIds: selectedPortGoods.map((item) => item.id),
                 giveGoodIds: tradeGiveGoods.map((item) => item.id),
-                giveCrewCount: 0,
+                giveCrewCount: tradeCrewCount,
               });
           }}
           disabled={!canTradePort}
@@ -1040,13 +1068,7 @@ function OnlineMatch({
           onPress={() => {
             if (selected) setSellType(selected);
           }}
-          disabled={
-            !myTurn ||
-            selectedPortItems.length > 0 ||
-            !selected ||
-            selectedGoodIds.length <
-              (selected ? GOOD_INFO[selected].minimum : 1)
-          }
+          disabled={!canSellInventory}
         />
       </View>
       <SellModal
