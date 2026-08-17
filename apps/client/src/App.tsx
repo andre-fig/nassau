@@ -414,7 +414,6 @@ function GameScreen({
   const canTradePort =
     selectedPortGoods.length >= 1 &&
     selectedPortItems.length === selectedPortGoods.length &&
-    selectedPortTypes.size === selectedPortGoods.length &&
     tradeGiveGoods.length === selectedInventoryGoods.length &&
     tradeCrewCount >= 0 &&
     tradeCrewCount <= current.crew;
@@ -927,7 +926,6 @@ function OnlineMatch({
     myTurn &&
     selectedPortGoods.length >= 1 &&
     selectedPortItems.length === selectedPortGoods.length &&
-    selectedPortTypes.size === selectedPortGoods.length &&
     tradeGiveGoods.length === selectedInventoryGoods.length &&
     tradeCrewCount >= 0 &&
     tradeCrewCount <= view.me.crew;
