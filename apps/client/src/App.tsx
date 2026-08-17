@@ -434,10 +434,14 @@ function GameScreen({
         onSelectItem={(item) => {
           setSelectedType(undefined);
           if (item.type === "crew") {
-            setSelectedPortIds(
-              view.public.port
-                .filter((entry) => entry.type === "crew")
-                .map((entry) => entry.id),
+            const crewIds = view.public.port
+              .filter((entry) => entry.type === "crew")
+              .map((entry) => entry.id);
+            setSelectedPortIds((currentIds) =>
+              crewIds.every((id) => currentIds.includes(id)) &&
+              currentIds.length === crewIds.length
+                ? []
+                : crewIds,
             );
           } else {
             setSelectedPortIds((currentIds) => {
@@ -926,10 +930,14 @@ function OnlineMatch({
         onSelectItem={(item) => {
           setSelected(undefined);
           if (item.type === "crew") {
-            setSelectedPortIds(
-              view.public.port
-                .filter((entry) => entry.type === "crew")
-                .map((entry) => entry.id),
+            const crewIds = view.public.port
+              .filter((entry) => entry.type === "crew")
+              .map((entry) => entry.id);
+            setSelectedPortIds((currentIds) =>
+              crewIds.every((id) => currentIds.includes(id)) &&
+              currentIds.length === crewIds.length
+                ? []
+                : crewIds,
             );
           } else {
             setSelectedPortIds((currentIds) => {
