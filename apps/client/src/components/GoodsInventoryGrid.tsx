@@ -1,34 +1,57 @@
 import React from "react";
 import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
-import { GOOD_INFO, GoodItem, GoodType } from "@nassau/game-engine";
+import { GOOD_INFO, GoodItem, GoodType, GOODS } from "@nassau/game-engine";
 import { ITEM_SQUARE } from "./SquareDimensions";
 
 export function GoodsInventoryGrid({
   goods,
+  crew,
   selected,
   onSelect,
 }: {
   goods: GoodItem[];
+  crew: number;
   selected?: GoodType;
   onSelect: (type: GoodType) => void;
 }) {
+  const orderedGoods = GOODS.flatMap((type) =>
+    goods.filter((item) => item.type === type),
+  );
+  const cards = [
+    ...orderedGoods,
+    ...Array.from({ length: Math.max(0, crew) }, (_, index) => ({
+      id: `crew-${index}`,
+      type: "crew" as const,
+    })),
+  ];
+
   return (
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.grid}
     >
-      {goods.map((item) => {
-        const info = GOOD_INFO[item.type];
+      {cards.map((item) => {
+        const isCrew = item.type === "crew";
+        const info = isCrew ? undefined : GOOD_INFO[item.type];
         return (
           <Pressable
             key={item.id}
-            onPress={() => onSelect(item.type)}
-            style={[styles.tile, selected === item.type && styles.selected]}
+            disabled={isCrew}
+            onPress={() => {
+              if (!isCrew) onSelect(item.type);
+            }}
+            style={[
+              styles.tile,
+              isCrew && styles.crewTile,
+              !isCrew && selected === item.type && styles.selected,
+            ]}
           >
-            <Text style={styles.icon}>{info.icon}</Text>
+            <Text style={[styles.icon, isCrew && styles.crewIcon]}>
+              {isCrew ? "👥" : info?.icon}
+            </Text>
             <Text style={styles.name} numberOfLines={2}>
-              {info.shortLabel}
+              {isCrew ? "Tripulação" : info?.shortLabel}
             </Text>
           </Pressable>
         );
@@ -55,8 +78,10 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     padding: 9,
   },
+  crewTile: { backgroundColor: "#d8e0d1" },
   selected: { borderColor: "#e0bd69", backgroundColor: "#173f49" },
   icon: { color: "#e1bd67", fontSize: 32, lineHeight: 38 },
+  crewIcon: { color: "#315b4d" },
   name: {
     color: "#f5eddb",
     fontSize: 12,

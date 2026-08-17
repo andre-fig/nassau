@@ -504,6 +504,7 @@ function GameScreen({
       </View>
       <GoodsInventoryGrid
         goods={current.goods}
+        crew={current.crew}
         selected={selectedType}
         onSelect={setSelectedType}
       />
@@ -966,6 +967,7 @@ function OnlineMatch({
       </View>
       <GoodsInventoryGrid
         goods={view.me.goods}
+        crew={view.me.crew}
         selected={selected}
         onSelect={setSelected}
       />
