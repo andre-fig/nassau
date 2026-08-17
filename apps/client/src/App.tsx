@@ -32,16 +32,7 @@ import { OpponentHeader } from "./components/OpponentHeader";
 import { PortGrid } from "./components/PortGrid";
 import { SellModal } from "./components/SellModal";
 
-type Screen =
-  | "loading"
-  | "menu"
-  | "offline"
-  | "difficulty"
-  | "setup"
-  | "online"
-  | "game"
-  | "result"
-  | "settings";
+type Screen = "loading" | "menu" | "online" | "game" | "result" | "settings";
 type Profile = {
   guestId: string;
   displayName: string;
@@ -64,7 +55,6 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>("loading");
   const [profile, setProfile] = useState<Profile>(defaultProfile);
   const [game, setGame] = useState<GameState>();
-  const [difficulty, setDifficulty] = useState<Difficulty>("normal");
   const [error, setError] = useState("");
   const [pendingJoinCode, setPendingJoinCode] = useState("");
 
@@ -100,24 +90,8 @@ export default function App() {
       <Menu
         profile={profile}
         onEdit={() => setScreen("settings")}
-        onOffline={() => setScreen("offline")}
+        onOffline={startLocal}
         onOnline={() => setScreen("online")}
-      />
-    );
-  if (screen === "offline")
-    return (
-      <ModeScreen
-        onBack={() => setScreen("menu")}
-        onAI={() => setScreen("difficulty")}
-      />
-    );
-  if (screen === "difficulty")
-    return (
-      <DifficultyScreen
-        onBack={() => setScreen("offline")}
-        difficulty={difficulty}
-        setDifficulty={setDifficulty}
-        onStart={startLocal}
       />
     );
   if (screen === "online")
@@ -150,7 +124,7 @@ export default function App() {
     return (
       <GameScreen
         state={game}
-        difficulty={difficulty}
+        difficulty="hard"
         setState={(next) => {
           setGame(next);
           if (next.phase === "finished") setScreen("result");
@@ -257,66 +231,6 @@ function Menu({
       <Text style={styles.quote}>
         “A melhor carga é a que chega antes da maré virar.”
       </Text>
-    </Shell>
-  );
-}
-function ModeScreen({
-  onBack,
-  onAI,
-}: {
-  onBack: () => void;
-  onAI: () => void;
-}) {
-  return (
-    <Shell>
-      <Back onPress={onBack} />
-      <Brand />
-      <Text style={styles.title}>Escolha sua mesa</Text>
-      <Text style={styles.muted}>Partidas rápidas, uma única rodada.</Text>
-      <View style={styles.menuCard}>
-        <Button label="CONTRA A MÁQUINA" onPress={onAI} />
-      </View>
-    </Shell>
-  );
-}
-function DifficultyScreen({
-  onBack,
-  difficulty,
-  setDifficulty,
-  onStart,
-}: {
-  onBack: () => void;
-  difficulty: Difficulty;
-  setDifficulty: (value: Difficulty) => void;
-  onStart: () => void;
-}) {
-  return (
-    <Shell>
-      <Back onPress={onBack} />
-      <Text style={styles.title}>Escolha a maré</Text>
-      {(["easy", "normal", "hard"] as Difficulty[]).map((value) => (
-        <Pressable
-          key={value}
-          onPress={() => setDifficulty(value)}
-          style={[styles.choice, difficulty === value && styles.choiceActive]}
-        >
-          <Text style={styles.choiceTitle}>
-            {value === "easy"
-              ? "MARÉ CALMA"
-              : value === "normal"
-                ? "MARÉ CHEIA"
-                : "MARÉ BRAVA"}
-          </Text>
-          <Text style={styles.muted}>
-            {value === "easy"
-              ? "Para aprender o porto."
-              : value === "normal"
-                ? "Decisões equilibradas."
-                : "A máquina bloqueia oportunidades."}
-          </Text>
-        </Pressable>
-      ))}
-      <Button label="COMEÇAR PARTIDA" onPress={onStart} />
     </Shell>
   );
 }
@@ -1186,15 +1100,6 @@ const styles = StyleSheet.create({
     marginVertical: 12,
   },
   muted: { color: "#9bb8bb", fontSize: 14, lineHeight: 21 },
-  choice: {
-    borderWidth: 1,
-    borderColor: "#285664",
-    borderRadius: 12,
-    padding: 18,
-    marginVertical: 7,
-  },
-  choiceActive: { borderColor: "#e0bd69", backgroundColor: "#173f49" },
-  choiceTitle: { color: "#f5eddb", fontWeight: "800", letterSpacing: 1 },
   label: { color: "#d3dacc", fontSize: 13, marginTop: 22, marginBottom: 8 },
   input: {
     backgroundColor: "#0e3542",
