@@ -501,14 +501,18 @@ function GameScreen({
           if (selectedGoodIds.includes(item.id)) {
             const nextIds = selectedGoodIds.filter((id) => id !== item.id);
             setSelectedGoodIds(nextIds);
-            if (nextIds.length === 0) setSelectedType(undefined);
-          } else if (selectedType && selectedType !== item.type) {
-            setSelectedType(item.type);
-            setSelectedGoodIds([item.id]);
           } else {
-            setSelectedType(item.type);
             setSelectedGoodIds([...selectedGoodIds, item.id]);
           }
+          const nextTypeIds = selectedGoodIds.includes(item.id)
+            ? selectedGoodIds.filter((id) => id !== item.id)
+            : [...selectedGoodIds, item.id];
+          const nextTypes = new Set(
+            current.goods
+              .filter((entry) => nextTypeIds.includes(entry.id))
+              .map((entry) => entry.type),
+          );
+          setSelectedType(nextTypes.size === 1 ? [...nextTypes][0] : undefined);
         }}
       />
       <View style={styles.actionBar}>
@@ -1021,14 +1025,18 @@ function OnlineMatch({
           if (selectedGoodIds.includes(item.id)) {
             const nextIds = selectedGoodIds.filter((id) => id !== item.id);
             setSelectedGoodIds(nextIds);
-            if (nextIds.length === 0) setSelected(undefined);
-          } else if (selected && selected !== item.type) {
-            setSelected(item.type);
-            setSelectedGoodIds([item.id]);
           } else {
-            setSelected(item.type);
             setSelectedGoodIds([...selectedGoodIds, item.id]);
           }
+          const nextTypeIds = selectedGoodIds.includes(item.id)
+            ? selectedGoodIds.filter((id) => id !== item.id)
+            : [...selectedGoodIds, item.id];
+          const nextTypes = new Set(
+            view.me.goods
+              .filter((entry) => nextTypeIds.includes(entry.id))
+              .map((entry) => entry.type),
+          );
+          setSelected(nextTypes.size === 1 ? [...nextTypes][0] : undefined);
         }}
       />
       <View style={styles.actionBar}>
