@@ -57,6 +57,29 @@ describe("Nassau game engine", () => {
     ).toBe(true);
   });
 
+  it("advances the turn count only after both players act", () => {
+    const state = game();
+    const firstGood = state.port.find((item) => item.type !== "crew")!;
+    const firstResult = applyAction(state, {
+      type: "take-good",
+      playerId: state.currentPlayerId,
+      itemId: firstGood.id,
+    });
+
+    expect(firstResult.state.turn).toBe(1);
+
+    const secondGood = firstResult.state.port.find(
+      (item) => item.type !== "crew",
+    )!;
+    const secondResult = applyAction(firstResult.state, {
+      type: "take-good",
+      playerId: firstResult.state.currentPlayerId,
+      itemId: secondGood.id,
+    });
+
+    expect(secondResult.state.turn).toBe(2);
+  });
+
   it("rejects crew as a received item", () => {
     const state = game();
     const crew = state.port.find((item) => item.type === "crew")!;

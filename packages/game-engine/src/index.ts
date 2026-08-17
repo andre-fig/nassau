@@ -534,7 +534,9 @@ export function applyAction(input: GameState, action: Action): ActionResult {
     state.currentPlayerId = state.players.find(
       (candidate) => candidate.id !== player.id,
     )!.id;
-    state.turn += 1;
+    if (state.actionLog.length % state.players.length === 0) {
+      state.turn += 1;
+    }
   }
   return { state, event };
 }
