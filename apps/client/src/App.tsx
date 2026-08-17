@@ -325,12 +325,16 @@ function GameScreen({
     (item) => !selectedPortTypes.has(item.type),
   );
   const tradeCrewCount = selectedPortGoods.length - tradeGiveGoods.length;
+  const tradeCargoFits =
+    current.goods.length - tradeGiveGoods.length + selectedPortGoods.length <=
+    7;
   const canTradePort =
     selectedPortGoods.length >= 1 &&
     selectedPortItems.length === selectedPortGoods.length &&
     tradeGiveGoods.length === selectedInventoryGoods.length &&
     tradeCrewCount >= 0 &&
-    tradeCrewCount <= current.crew;
+    tradeCrewCount <= current.crew &&
+    tradeCargoFits;
   const allSelectedCrew =
     selectedPortItems.length > 0 &&
     selectedPortItems.every((item) => item.type === "crew") &&
@@ -836,13 +840,17 @@ function OnlineMatch({
     (item) => !selectedPortTypes.has(item.type),
   );
   const tradeCrewCount = selectedPortGoods.length - tradeGiveGoods.length;
+  const tradeCargoFits =
+    view.me.goods.length - tradeGiveGoods.length + selectedPortGoods.length <=
+    7;
   const canTradePort =
     myTurn &&
     selectedPortGoods.length >= 1 &&
     selectedPortItems.length === selectedPortGoods.length &&
     tradeGiveGoods.length === selectedInventoryGoods.length &&
     tradeCrewCount >= 0 &&
-    tradeCrewCount <= view.me.crew;
+    tradeCrewCount <= view.me.crew &&
+    tradeCargoFits;
   const allSelectedCrew =
     selectedPortItems.length > 0 &&
     selectedPortItems.every((item) => item.type === "crew") &&
