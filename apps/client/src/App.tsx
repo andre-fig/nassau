@@ -285,6 +285,7 @@ function GameScreen({
           <Text style={styles.muted}>
             O oponente vê apenas o que é público.
           </Text>
+          {message ? <Text style={styles.error}>{message}</Text> : null}
         </View>
       </Shell>
     );

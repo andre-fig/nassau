@@ -359,11 +359,20 @@ export function getLegalActions(
   const take = portGoods
     .slice(0, Math.min(2, portGoods.length))
     .map((entry) => entry.id);
+  const takenTypes = new Set(
+    portGoods.slice(0, take.length).map((entry) => entry.type),
+  );
   const giveGoodIds = player.goods
+    .filter((entry) => !takenTypes.has(entry.type))
     .slice(0, take.length)
     .map((entry) => entry.id);
   const giveCrewCount = take.length - giveGoodIds.length;
-  if (take.length >= 1 && giveCrewCount <= player.crew)
+  if (
+    take.length >= 1 &&
+    giveCrewCount >= 0 &&
+    giveCrewCount <= player.crew &&
+    player.goods.length - giveGoodIds.length + take.length <= 7
+  )
     actions.push({
       type: "trade",
       playerId,
