@@ -28,7 +28,7 @@ export const GOOD_INFO: Record<
     icon: "👑",
     supply: 5,
     values: [7, 7, 5, 5],
-    minimum: 2,
+    minimum: 1,
   },
   "gold-chests": {
     label: "Baús de Ouro",
@@ -36,7 +36,7 @@ export const GOOD_INFO: Record<
     icon: "🪎",
     supply: 5,
     values: [6, 6, 5, 5],
-    minimum: 2,
+    minimum: 1,
   },
   "spanish-silver": {
     label: "Prataria Espanhola",
@@ -44,7 +44,7 @@ export const GOOD_INFO: Record<
     icon: "🥈",
     supply: 5,
     values: [5, 5, 5, 5],
-    minimum: 2,
+    minimum: 1,
   },
   rum: {
     label: "Rum",

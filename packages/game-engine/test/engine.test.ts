@@ -140,21 +140,26 @@ describe("Nassau game engine", () => {
     );
   });
 
-  it("enforces the noble minimum and previews a sale", () => {
+  it("allows selling one unit and previews a sale", () => {
     const state = game();
     const player = state.players.find((p) => p.id === state.currentPlayerId)!;
-    player.goods = [{ id: "j-1", type: "royal-jewels" }];
-    expect(getSalePreview(state, player.id, "royal-jewels", 1).canSell).toBe(
-      false,
-    );
-    expect(() =>
-      applyAction(state, {
-        type: "sell",
-        playerId: player.id,
-        goodType: "royal-jewels",
-        quantity: 1,
-      }),
-    ).toThrow();
+    player.goods = [
+      { id: "silver-1", type: "spanish-silver" },
+      { id: "silver-2", type: "spanish-silver" },
+    ];
+    expect(
+      getSalePreview(state, player.id, "spanish-silver", 1).canSell,
+    ).toBe(true);
+    const result = applyAction(state, {
+      type: "sell",
+      playerId: player.id,
+      goodType: "spanish-silver",
+      quantity: 1,
+    });
+    expect(
+      result.state.players.find((candidate) => candidate.id === player.id)
+        ?.goods,
+    ).toHaveLength(1);
   });
 
   it("finishes after two value tracks are empty and awards majority crew", () => {
