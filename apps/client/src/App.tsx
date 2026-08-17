@@ -338,6 +338,7 @@ function GameScreen({
   setState: (next: GameState) => void;
 }) {
   const [selectedType, setSelectedType] = useState<GoodType>();
+  const [selectedGoodIds, setSelectedGoodIds] = useState<string[]>([]);
   const [selectedPortIds, setSelectedPortIds] = useState<string[]>([]);
   const [sellType, setSellType] = useState<GoodType>();
   const [message, setMessage] = useState("");
@@ -376,6 +377,7 @@ function GameScreen({
   const act = (action: Action) => {
     try {
       setSelectedType(undefined);
+      setSelectedGoodIds([]);
       setSelectedPortIds([]);
       setSellType(undefined);
       setState(applyAction(state, action).state);
@@ -383,9 +385,7 @@ function GameScreen({
       setMessage(error instanceof Error ? error.message : "Ação inválida");
     }
   };
-  const saleCount = sellType
-    ? current.goods.filter((item) => item.type === sellType).length
-    : 0;
+  const saleCount = sellType ? selectedGoodIds.length : 0;
   const preview = sellType
     ? getSalePreview(state, current.id, sellType, saleCount)
     : undefined;
@@ -433,6 +433,7 @@ function GameScreen({
         selectedItemIds={selectedPortIds}
         onSelectItem={(item) => {
           setSelectedType(undefined);
+          setSelectedGoodIds([]);
           if (item.type === "crew") {
             const crewIds = view.public.port
               .filter((entry) => entry.type === "crew")
@@ -476,10 +477,21 @@ function GameScreen({
       </View>
       <GoodsInventoryGrid
         goods={current.goods}
-        selected={selectedType}
-        onSelect={(type) => {
+        selectedItemIds={selectedGoodIds}
+        onSelectItem={(item) => {
           setSelectedPortIds([]);
-          setSelectedType(type);
+          setSellType(undefined);
+          if (selectedGoodIds.includes(item.id)) {
+            const nextIds = selectedGoodIds.filter((id) => id !== item.id);
+            setSelectedGoodIds(nextIds);
+            if (nextIds.length === 0) setSelectedType(undefined);
+          } else if (selectedType && selectedType !== item.type) {
+            setSelectedType(item.type);
+            setSelectedGoodIds([item.id]);
+          } else {
+            setSelectedType(item.type);
+            setSelectedGoodIds([...selectedGoodIds, item.id]);
+          }
         }}
       />
       <View style={styles.actionBar}>
@@ -526,7 +538,7 @@ function GameScreen({
           disabled={
             selectedPortItems.length > 0 ||
             !selectedType ||
-            current.goods.filter((item) => item.type === selectedType).length <
+            selectedGoodIds.length <
               (selectedType ? GOOD_INFO[selectedType].minimum : 1)
           }
         />
@@ -837,6 +849,7 @@ function OnlineMatch({
   onBack: () => void;
 }) {
   const [selected, setSelected] = useState<GoodType>();
+  const [selectedGoodIds, setSelectedGoodIds] = useState<string[]>([]);
   const [selectedPortIds, setSelectedPortIds] = useState<string[]>([]);
   const [sellType, setSellType] = useState<GoodType>();
   const [message, setMessage] = useState("");
@@ -856,6 +869,8 @@ function OnlineMatch({
   }, [socket, code, reconnectToken, onView]);
   const send = (action: Record<string, unknown>) => {
     setMessage("");
+    setSelectedGoodIds([]);
+    setSelected(undefined);
     setSelectedPortIds([]);
     setSellType(undefined);
     socket.emit("game:action", {
@@ -866,9 +881,7 @@ function OnlineMatch({
     });
   };
   const myTurn = view.public.currentPlayerId === view.me.id;
-  const count = sellType
-    ? view.me.goods.filter((item) => item.type === sellType).length
-    : 0;
+  const count = sellType ? selectedGoodIds.length : 0;
   const values = sellType ? view.public.values[sellType].slice(0, count) : [];
   const contractPrestige =
     count >= 5 ? 9 : count === 4 ? 5 : count === 3 ? 2 : 0;
@@ -928,6 +941,7 @@ function OnlineMatch({
         selectedItemIds={selectedPortIds}
         onSelectItem={(item) => {
           setSelected(undefined);
+          setSelectedGoodIds([]);
           if (item.type === "crew") {
             const crewIds = view.public.port
               .filter((entry) => entry.type === "crew")
@@ -972,10 +986,21 @@ function OnlineMatch({
       </View>
       <GoodsInventoryGrid
         goods={view.me.goods}
-        selected={selected}
-        onSelect={(type) => {
+        selectedItemIds={selectedGoodIds}
+        onSelectItem={(item) => {
           setSelectedPortIds([]);
-          setSelected(type);
+          setSellType(undefined);
+          if (selectedGoodIds.includes(item.id)) {
+            const nextIds = selectedGoodIds.filter((id) => id !== item.id);
+            setSelectedGoodIds(nextIds);
+            if (nextIds.length === 0) setSelected(undefined);
+          } else if (selected && selected !== item.type) {
+            setSelected(item.type);
+            setSelectedGoodIds([item.id]);
+          } else {
+            setSelected(item.type);
+            setSelectedGoodIds([...selectedGoodIds, item.id]);
+          }
         }}
       />
       <View style={styles.actionBar}>
@@ -1019,7 +1044,7 @@ function OnlineMatch({
             !myTurn ||
             selectedPortItems.length > 0 ||
             !selected ||
-            view.me.goods.filter((item) => item.type === selected).length <
+            selectedGoodIds.length <
               (selected ? GOOD_INFO[selected].minimum : 1)
           }
         />

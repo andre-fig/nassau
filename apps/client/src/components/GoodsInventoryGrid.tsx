@@ -1,16 +1,16 @@
 import React from "react";
 import { Pressable, ScrollView, StyleSheet, Text } from "react-native";
-import { GOOD_INFO, GoodItem, GoodType, GOODS } from "@nassau/game-engine";
+import { GOOD_INFO, GoodItem, GOODS } from "@nassau/game-engine";
 import { ITEM_SQUARE } from "./SquareDimensions";
 
 export function GoodsInventoryGrid({
   goods,
-  selected,
-  onSelect,
+  selectedItemIds,
+  onSelectItem,
 }: {
   goods: GoodItem[];
-  selected?: GoodType;
-  onSelect: (type: GoodType) => void;
+  selectedItemIds: string[];
+  onSelectItem: (item: GoodItem) => void;
 }) {
   const orderedGoods = GOODS.flatMap((type) =>
     goods.filter((item) => item.type === type),
@@ -26,8 +26,11 @@ export function GoodsInventoryGrid({
         return (
           <Pressable
             key={item.id}
-            onPress={() => onSelect(item.type)}
-            style={[styles.tile, selected === item.type && styles.selected]}
+            onPress={() => onSelectItem(item)}
+            style={[
+              styles.tile,
+              selectedItemIds.includes(item.id) && styles.selected,
+            ]}
           >
             <Text style={styles.icon}>{info.icon}</Text>
             <Text style={styles.name} numberOfLines={2}>
