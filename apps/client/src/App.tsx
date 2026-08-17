@@ -30,6 +30,7 @@ import { GameActionButton } from "./components/GameActionButton";
 import { GoodsInventoryGrid } from "./components/GoodsInventoryGrid";
 import { OpponentHeader } from "./components/OpponentHeader";
 import { PortGrid } from "./components/PortGrid";
+import { SellModal } from "./components/SellModal";
 
 type Screen =
   | "loading"
@@ -406,6 +407,7 @@ function GameScreen({
     mode === "ai" || state.turn === 1,
   );
   const [selectedType, setSelectedType] = useState<GoodType>();
+  const [sellType, setSellType] = useState<GoodType>();
   const [message, setMessage] = useState("");
   const current = state.players.find(
     (player) => player.id === state.currentPlayerId,
@@ -453,17 +455,26 @@ function GameScreen({
   const act = (action: Action) => {
     try {
       setSelectedType(undefined);
+      setSellType(undefined);
       setState(applyAction(state, action).state);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Ação inválida");
     }
   };
-  const saleCount = selectedType
-    ? current.goods.filter((item) => item.type === selectedType).length
+  const saleCount = sellType
+    ? current.goods.filter((item) => item.type === sellType).length
     : 0;
-  const preview = selectedType
-    ? getSalePreview(state, current.id, selectedType, saleCount)
+  const preview = sellType
+    ? getSalePreview(state, current.id, sellType, saleCount)
     : undefined;
+  const contractName =
+    saleCount >= 5
+      ? "Contrato Grande"
+      : saleCount === 4
+        ? "Contrato Médio"
+        : saleCount === 3
+          ? "Contrato Pequeno"
+          : undefined;
   return (
     <Shell>
       <OpponentHeader
@@ -472,16 +483,6 @@ function GameScreen({
         prestige={view.opponent?.prestige}
         crew={view.opponent?.crew}
       />
-      <View style={styles.gameTop}>
-        <View>
-          <Text style={styles.eyebrow}>TURNO {state.turn}</Text>
-          <Text style={styles.title}>{current.displayName}</Text>
-        </View>
-        <View style={styles.score}>
-          <Text style={styles.eyebrow}>SEU PRESTÍGIO</Text>
-          <Text style={styles.scoreText}>{current.prestige}</Text>
-        </View>
-      </View>
       <Text style={styles.section}>PORTO DE NASSAU</Text>
       <PortGrid
         items={view.public.port}
@@ -494,7 +495,18 @@ function GameScreen({
         onRecruit={() => act({ type: "recruit-crew", playerId: current.id })}
       />
       <View style={styles.handHeader}>
-        <Text style={styles.section}>SEU INVENTÁRIO</Text>
+        <View>
+          <Text style={styles.section}>SEU INVENTÁRIO (PRIVADO)</Text>
+          <Text style={styles.turnLabel}>
+            TURNO {state.turn} · {current.displayName}
+          </Text>
+        </View>
+        <View style={styles.score}>
+          <Text style={styles.eyebrow}>PRESTÍGIO</Text>
+          <Text style={styles.scoreText}>{current.prestige}</Text>
+        </View>
+      </View>
+      <View style={styles.cargoBar}>
         <Text style={styles.cargo}>
           {current.goods.length}/7 cargas · 👥 {current.crew}
         </Text>
@@ -504,51 +516,81 @@ function GameScreen({
         values={view.public.values}
         selected={selectedType}
         onSelect={setSelectedType}
+        onSell={(type) => {
+          setSelectedType(type);
+          setSellType(type);
+        }}
       />
-      {selectedType && (
-        <View style={styles.preview}>
-          <Text style={styles.previewTitle}>
-            Vender {saleCount} {GOOD_INFO[selectedType].label}
-          </Text>
-          <Text style={styles.values}>
-            {preview?.rewards.join(" + ") || "sem recompensas"}{" "}
-            {preview?.contractPrestige
-              ? ` · Contrato +${preview.contractPrestige}`
-              : ""}
-          </Text>
-          <Text style={styles.total}>+{preview?.total ?? 0} PRESTÍGIO</Text>
-          <GameActionButton
-            action="sell"
-            onPress={() =>
-              act({
-                type: "sell",
-                playerId: current.id,
-                goodType: selectedType,
-                quantity: saleCount,
-              })
-            }
-            disabled={!preview?.canSell}
-          />
-        </View>
-      )}
-      {current.goods.length > 0 &&
-        view.public.port.filter((item) => item.type !== "crew").length >= 2 && (
-          <GameActionButton
-            action="trade"
-            onPress={() =>
+      <View style={styles.actionBar}>
+        <GameActionButton
+          action="take"
+          label="PEGAR"
+          onPress={() => {
+            const item = view.public.port.find(
+              (entry) => entry.type !== "crew",
+            );
+            if (item)
+              act({ type: "take-good", playerId: current.id, itemId: item.id });
+          }}
+          disabled={
+            current.goods.length >= 7 ||
+            !view.public.port.some((item) => item.type !== "crew")
+          }
+        />
+        <GameActionButton
+          action="trade"
+          label="TROCAR"
+          onPress={() => {
+            const take = view.public.port
+              .filter((item) => item.type !== "crew")
+              .slice(0, 2);
+            if (take.length >= 2 && current.goods.length > 0) {
               act({
                 type: "trade",
                 playerId: current.id,
-                takeItemIds: view.public.port
-                  .filter((item) => item.type !== "crew")
-                  .slice(0, 2)
-                  .map((item) => item.id),
+                takeItemIds: take.map((item) => item.id),
                 giveGoodIds: [current.goods[0].id],
                 giveCrewCount: 0,
-              })
+              });
             }
-          />
-        )}
+          }}
+          disabled={
+            current.goods.length === 0 ||
+            view.public.port.filter((item) => item.type !== "crew").length < 2
+          }
+        />
+        <GameActionButton
+          action="sell"
+          label="VENDER"
+          onPress={() => {
+            if (selectedType) setSellType(selectedType);
+          }}
+          disabled={
+            !selectedType ||
+            current.goods.filter((item) => item.type === selectedType).length <
+              (selectedType ? GOOD_INFO[selectedType].minimum : 1)
+          }
+        />
+      </View>
+      <SellModal
+        visible={Boolean(sellType)}
+        goodType={sellType}
+        quantity={saleCount}
+        rewards={preview?.rewards ?? []}
+        contractName={contractName}
+        contractPrestige={preview?.contractPrestige ?? 0}
+        total={preview?.total ?? 0}
+        onClose={() => setSellType(undefined)}
+        onConfirm={() => {
+          if (sellType)
+            act({
+              type: "sell",
+              playerId: current.id,
+              goodType: sellType,
+              quantity: saleCount,
+            });
+        }}
+      />
       {message ? <Text style={styles.error}>{message}</Text> : null}
       <Text style={styles.stock}>
         Estoque oculto: {view.public.stockRemaining} itens · Trilhas esgotadas:{" "}
@@ -856,6 +898,7 @@ function OnlineMatch({
   onBack: () => void;
 }) {
   const [selected, setSelected] = useState<GoodType>();
+  const [sellType, setSellType] = useState<GoodType>();
   const [message, setMessage] = useState("");
   const socket = useMemo(
     () => io(`${WS_URL}/game`, { transports: ["websocket"] }),
@@ -873,6 +916,7 @@ function OnlineMatch({
   }, [socket, code, reconnectToken, onView]);
   const send = (action: Record<string, unknown>) => {
     setMessage("");
+    setSellType(undefined);
     socket.emit("game:action", {
       ...action,
       playerId: view.me.id,
@@ -881,10 +925,20 @@ function OnlineMatch({
     });
   };
   const myTurn = view.public.currentPlayerId === view.me.id;
-  const count = selected
-    ? view.me.goods.filter((item) => item.type === selected).length
+  const count = sellType
+    ? view.me.goods.filter((item) => item.type === sellType).length
     : 0;
-  const values = selected ? view.public.values[selected].slice(0, count) : [];
+  const values = sellType ? view.public.values[sellType].slice(0, count) : [];
+  const contractPrestige =
+    count >= 5 ? 9 : count === 4 ? 5 : count === 3 ? 2 : 0;
+  const contractName =
+    count >= 5
+      ? "Contrato Grande"
+      : count === 4
+        ? "Contrato Médio"
+        : count === 3
+          ? "Contrato Pequeno"
+          : undefined;
   if (view.phase === "finished")
     return (
       <Shell>
@@ -904,19 +958,7 @@ function OnlineMatch({
         prestige={view.opponent?.prestige}
         crew={view.opponent?.crew}
       />
-      <View style={styles.gameTop}>
-        <View>
-          <Text style={styles.eyebrow}>SALA {code}</Text>
-          <Text style={styles.title}>
-            {myTurn ? "Seu turno" : `Turno de ${view.opponent?.displayName}`}
-          </Text>
-        </View>
-        <View style={styles.score}>
-          <Text style={styles.eyebrow}>SEU PRESTÍGIO</Text>
-          <Text style={styles.scoreText}>{view.me.prestige}</Text>
-        </View>
-      </View>
-      <Text style={styles.section}>PORTO</Text>
+      <Text style={styles.section}>PORTO DE NASSAU</Text>
       <PortGrid
         items={view.public.port}
         values={view.public.values}
@@ -925,32 +967,99 @@ function OnlineMatch({
         onTake={(item) => send({ type: "take-good", itemId: item.id })}
         onRecruit={() => send({ type: "recruit-crew" })}
       />
-      <Text style={styles.section}>
-        MINHAS CARGAS · {view.me.goods.length}/7 · 👥 {view.me.crew}
-      </Text>
+      <View style={styles.handHeader}>
+        <View>
+          <Text style={styles.section}>SEU INVENTÁRIO (PRIVADO)</Text>
+          <Text style={styles.turnLabel}>
+            SALA {code} ·{" "}
+            {myTurn ? "SEU TURNO" : `TURNO DE ${view.opponent?.displayName}`}
+          </Text>
+        </View>
+        <View style={styles.score}>
+          <Text style={styles.eyebrow}>PRESTÍGIO</Text>
+          <Text style={styles.scoreText}>{view.me.prestige}</Text>
+        </View>
+      </View>
+      <View style={styles.cargoBar}>
+        <Text style={styles.cargo}>
+          {view.me.goods.length}/7 cargas · 👥 {view.me.crew}
+        </Text>
+      </View>
       <GoodsInventoryGrid
         goods={view.me.goods}
         values={view.public.values}
         selected={selected}
         onSelect={setSelected}
+        onSell={(type) => {
+          setSelected(type);
+          setSellType(type);
+        }}
       />
-      {selected ? (
-        <View style={styles.preview}>
-          <Text style={styles.previewTitle}>
-            Vender {count} {GOOD_INFO[selected].label}
-          </Text>
-          <Text style={styles.values}>
-            {values.join(" + ") || "sem recompensas"}
-          </Text>
-          <GameActionButton
-            action="sell"
-            onPress={() =>
-              send({ type: "sell", goodType: selected, quantity: count })
-            }
-            disabled={!myTurn || count < GOOD_INFO[selected].minimum}
-          />
-        </View>
-      ) : null}
+      <View style={styles.actionBar}>
+        <GameActionButton
+          action="take"
+          label="PEGAR"
+          onPress={() => {
+            const item = view.public.port.find(
+              (entry) => entry.type !== "crew",
+            );
+            if (item) send({ type: "take-good", itemId: item.id });
+          }}
+          disabled={
+            !myTurn ||
+            view.me.goods.length >= 7 ||
+            !view.public.port.some((item) => item.type !== "crew")
+          }
+        />
+        <GameActionButton
+          action="trade"
+          label="TROCAR"
+          onPress={() => {
+            const take = view.public.port
+              .filter((item) => item.type !== "crew")
+              .slice(0, 2);
+            if (take.length >= 2 && view.me.goods.length > 0)
+              send({
+                type: "trade",
+                takeItemIds: take.map((item) => item.id),
+                giveGoodIds: [view.me.goods[0].id],
+                giveCrewCount: 0,
+              });
+          }}
+          disabled={
+            !myTurn ||
+            view.me.goods.length === 0 ||
+            view.public.port.filter((item) => item.type !== "crew").length < 2
+          }
+        />
+        <GameActionButton
+          action="sell"
+          label="VENDER"
+          onPress={() => {
+            if (selected) setSellType(selected);
+          }}
+          disabled={
+            !myTurn ||
+            !selected ||
+            view.me.goods.filter((item) => item.type === selected).length <
+              (selected ? GOOD_INFO[selected].minimum : 1)
+          }
+        />
+      </View>
+      <SellModal
+        visible={Boolean(sellType)}
+        goodType={sellType}
+        quantity={count}
+        rewards={values}
+        contractName={contractName}
+        contractPrestige={contractPrestige}
+        total={values.reduce((sum, value) => sum + value, 0) + contractPrestige}
+        onClose={() => setSellType(undefined)}
+        onConfirm={() => {
+          if (sellType)
+            send({ type: "sell", goodType: sellType, quantity: count });
+        }}
+      />
       {message ? <Text style={styles.error}>{message}</Text> : null}
     </Shell>
   );
@@ -1105,7 +1214,15 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
   },
+  turnLabel: { color: "#91b6b8", fontSize: 11, marginTop: 2 },
+  cargoBar: { alignItems: "flex-end", marginBottom: 7 },
   cargo: { color: "#b8d1cd", fontSize: 13 },
+  actionBar: {
+    flexDirection: "row",
+    gap: 8,
+    justifyContent: "center",
+    marginTop: 14,
+  },
   goodsGrid: { gap: 7 },
   goodRow: {
     flexDirection: "row",
