@@ -484,16 +484,7 @@ function GameScreen({
         crew={view.opponent?.crew}
       />
       <Text style={styles.section}>PORTO DE NASSAU</Text>
-      <PortGrid
-        items={view.public.port}
-        values={view.public.values}
-        canAct={current.id === state.currentPlayerId && !isAI}
-        canTakeGoods={current.goods.length < 7}
-        onTake={(item) =>
-          act({ type: "take-good", playerId: current.id, itemId: item.id })
-        }
-        onRecruit={() => act({ type: "recruit-crew", playerId: current.id })}
-      />
+      <PortGrid items={view.public.port} />
       <View style={styles.handHeader}>
         <View>
           <Text style={styles.section}>SEU INVENTÁRIO (PRIVADO)</Text>
@@ -513,13 +504,8 @@ function GameScreen({
       </View>
       <GoodsInventoryGrid
         goods={current.goods}
-        values={view.public.values}
         selected={selectedType}
         onSelect={setSelectedType}
-        onSell={(type) => {
-          setSelectedType(type);
-          setSellType(type);
-        }}
       />
       <View style={styles.actionBar}>
         <GameActionButton
@@ -959,14 +945,7 @@ function OnlineMatch({
         crew={view.opponent?.crew}
       />
       <Text style={styles.section}>PORTO DE NASSAU</Text>
-      <PortGrid
-        items={view.public.port}
-        values={view.public.values}
-        canAct={myTurn}
-        canTakeGoods={view.me.goods.length < 7}
-        onTake={(item) => send({ type: "take-good", itemId: item.id })}
-        onRecruit={() => send({ type: "recruit-crew" })}
-      />
+      <PortGrid items={view.public.port} />
       <View style={styles.handHeader}>
         <View>
           <Text style={styles.section}>SEU INVENTÁRIO (PRIVADO)</Text>
@@ -987,13 +966,8 @@ function OnlineMatch({
       </View>
       <GoodsInventoryGrid
         goods={view.me.goods}
-        values={view.public.values}
         selected={selected}
         onSelect={setSelected}
-        onSell={(type) => {
-          setSelected(type);
-          setSellType(type);
-        }}
       />
       <View style={styles.actionBar}>
         <GameActionButton

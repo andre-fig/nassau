@@ -1,26 +1,9 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { GOOD_INFO, GoodItem, GoodType, Item } from "@nassau/game-engine";
-import { GameActionButton } from "./GameActionButton";
+import { GOOD_INFO, Item } from "@nassau/game-engine";
 import { ITEM_SQUARE } from "./SquareDimensions";
 
-type PortValues = Record<GoodType, number[]>;
-
-export function PortGrid({
-  items,
-  values,
-  canAct,
-  canTakeGoods = true,
-  onTake,
-  onRecruit,
-}: {
-  items: Item[];
-  values: PortValues;
-  canAct: boolean;
-  canTakeGoods?: boolean;
-  onTake?: (item: GoodItem) => void;
-  onRecruit?: () => void;
-}) {
+export function PortGrid({ items }: { items: Item[] }) {
   const rows = [items.slice(0, 2), items.slice(2, 5)];
 
   return (
@@ -41,23 +24,6 @@ export function PortGrid({
                 <Text style={styles.tileText} numberOfLines={2}>
                   {isCrew ? "Tripulação" : info?.shortLabel}
                 </Text>
-                <Text style={styles.tileSub} numberOfLines={1}>
-                  {isCrew ? "recrutar" : `${values[item.type][0] ?? "—"} ouro`}
-                </Text>
-                {canAct && isCrew && onRecruit ? (
-                  <GameActionButton
-                    action="take"
-                    label="RECRUTAR"
-                    onPress={onRecruit}
-                  />
-                ) : canAct && canTakeGoods && !isCrew && onTake ? (
-                  <GameActionButton
-                    action="take"
-                    onPress={() => onTake(item)}
-                  />
-                ) : (
-                  <View style={styles.actionSpacer} />
-                )}
               </View>
             );
           })}
@@ -78,7 +44,7 @@ const styles = StyleSheet.create({
     width: ITEM_SQUARE,
     height: ITEM_SQUARE,
     alignItems: "center",
-    justifyContent: "flex-start",
+    justifyContent: "center",
     backgroundColor: "#f3ead3",
     borderRadius: 16,
     padding: 9,
@@ -93,6 +59,4 @@ const styles = StyleSheet.create({
     textAlign: "center",
     minHeight: 29,
   },
-  tileSub: { color: "#5f7672", fontSize: 11, marginTop: 1 },
-  actionSpacer: { height: 44 },
 });
