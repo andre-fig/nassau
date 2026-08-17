@@ -64,9 +64,7 @@ export default function App() {
   const [screen, setScreen] = useState<Screen>("loading");
   const [profile, setProfile] = useState<Profile>(defaultProfile);
   const [game, setGame] = useState<GameState>();
-  const [mode, setMode] = useState<"ai" | "hotseat">("ai");
   const [difficulty, setDifficulty] = useState<Difficulty>("normal");
-  const [secondName, setSecondName] = useState("Olga");
   const [error, setError] = useState("");
   const [pendingJoinCode, setPendingJoinCode] = useState("");
 
@@ -88,16 +86,10 @@ export default function App() {
     void AsyncStorage.setItem(profileKey, JSON.stringify(next));
   };
   const startLocal = () => {
-    const players =
-      mode === "ai"
-        ? [
-            { id: profile.guestId, displayName: profile.displayName },
-            { id: "computer", displayName: "A Maré" },
-          ]
-        : [
-            { id: profile.guestId, displayName: profile.displayName },
-            { id: "hotseat-2", displayName: secondName || "Olga" },
-          ];
+    const players = [
+      { id: profile.guestId, displayName: profile.displayName },
+      { id: "computer", displayName: "A Maré" },
+    ];
     setGame(createGame({ players }, Date.now()));
     setScreen("game");
   };
@@ -116,14 +108,7 @@ export default function App() {
     return (
       <ModeScreen
         onBack={() => setScreen("menu")}
-        onAI={() => {
-          setMode("ai");
-          setScreen("difficulty");
-        }}
-        onHotseat={() => {
-          setMode("hotseat");
-          setScreen("setup");
-        }}
+        onAI={() => setScreen("difficulty")}
       />
     );
   if (screen === "difficulty")
@@ -132,18 +117,6 @@ export default function App() {
         onBack={() => setScreen("offline")}
         difficulty={difficulty}
         setDifficulty={setDifficulty}
-        onStart={() => {
-          setMode("ai");
-          startLocal();
-        }}
-      />
-    );
-  if (screen === "setup")
-    return (
-      <SetupScreen
-        name={secondName}
-        setName={setSecondName}
-        onBack={() => setScreen("offline")}
         onStart={startLocal}
       />
     );
@@ -177,7 +150,6 @@ export default function App() {
     return (
       <GameScreen
         state={game}
-        mode={mode}
         difficulty={difficulty}
         setState={(next) => {
           setGame(next);
@@ -291,11 +263,9 @@ function Menu({
 function ModeScreen({
   onBack,
   onAI,
-  onHotseat,
 }: {
   onBack: () => void;
   onAI: () => void;
-  onHotseat: () => void;
 }) {
   return (
     <Shell>
@@ -305,11 +275,6 @@ function ModeScreen({
       <Text style={styles.muted}>Partidas rápidas, uma única rodada.</Text>
       <View style={styles.menuCard}>
         <Button label="CONTRA A MÁQUINA" onPress={onAI} />
-        <Button
-          label="2 JOGADORES NESTE DISPOSITIVO"
-          onPress={onHotseat}
-          secondary
-        />
       </View>
     </Shell>
   );
@@ -355,35 +320,6 @@ function DifficultyScreen({
     </Shell>
   );
 }
-function SetupScreen({
-  name,
-  setName,
-  onBack,
-  onStart,
-}: {
-  name: string;
-  setName: (value: string) => void;
-  onBack: () => void;
-  onStart: () => void;
-}) {
-  return (
-    <Shell>
-      <Back onPress={onBack} />
-      <Text style={styles.title}>Dois capitães</Text>
-      <Text style={styles.muted}>Passe o dispositivo entre os turnos.</Text>
-      <Text style={styles.label}>Nome do segundo jogador</Text>
-      <TextInput
-        value={name}
-        onChangeText={setName}
-        maxLength={24}
-        style={styles.input}
-        placeholder="Olga"
-        placeholderTextColor="#7895a0"
-      />
-      <Button label="ABRIR A MESA" onPress={onStart} />
-    </Shell>
-  );
-}
 function Back({ onPress }: { onPress: () => void }) {
   return (
     <Pressable onPress={onPress} accessibilityLabel="Voltar">
@@ -394,18 +330,13 @@ function Back({ onPress }: { onPress: () => void }) {
 
 function GameScreen({
   state,
-  mode,
   difficulty,
   setState,
 }: {
   state: GameState;
-  mode: "ai" | "hotseat";
   difficulty: Difficulty;
   setState: (next: GameState) => void;
 }) {
-  const [privateReady, setPrivateReady] = useState(
-    mode === "ai" || state.turn === 1,
-  );
   const [selectedType, setSelectedType] = useState<GoodType>();
   const [sellType, setSellType] = useState<GoodType>();
   const [message, setMessage] = useState("");
@@ -413,11 +344,7 @@ function GameScreen({
     (player) => player.id === state.currentPlayerId,
   )!;
   const view = getPlayerView(state, current.id);
-  const humanId = state.players[0].id;
-  const isAI = mode === "ai" && current.id === "computer";
-  useEffect(() => {
-    if (mode === "hotseat" && state.turn > 1) setPrivateReady(false);
-  }, [state.turn, mode]);
+  const isAI = current.id === "computer";
   useEffect(() => {
     if (!isAI || state.phase !== "playing") return;
     const chosen = chooseAction(getPlayerView(state, "computer"), difficulty);
@@ -433,13 +360,6 @@ function GameScreen({
     }, 280);
     return () => clearTimeout(timer);
   }, [isAI, state, difficulty, setState]);
-  if (mode === "hotseat" && !privateReady)
-    return (
-      <PrivacyScreen
-        name={current.displayName}
-        onReveal={() => setPrivateReady(true)}
-      />
-    );
   if (isAI)
     return (
       <Shell>
@@ -584,26 +504,6 @@ function GameScreen({
         {view.public.emptyTracks.length}/2
       </Text>
     </Shell>
-  );
-}
-
-function PrivacyScreen({
-  name,
-  onReveal,
-}: {
-  name: string;
-  onReveal: () => void;
-}) {
-  return (
-    <LinearGradient colors={["#061d2b", "#0b4050"]} style={styles.center}>
-      <Text style={styles.emblem}>☠︎</Text>
-      <Text style={styles.eyebrow}>PRÓXIMO TURNO</Text>
-      <Text style={styles.title}>TURNO DE {name.toUpperCase()}</Text>
-      <Text style={styles.muted}>
-        Passe o dispositivo para o próximo capitão.
-      </Text>
-      <Button label="SEGURE PARA REVELAR" onPress={onReveal} />
-    </LinearGradient>
   );
 }
 
