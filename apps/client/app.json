@@ -1,0 +1,13 @@
+{
+  "expo": {
+    "name": "Nassau",
+    "slug": "nassau",
+    "version": "0.1.0",
+    "orientation": "default",
+    "scheme": "nassau",
+    "userInterfaceStyle": "dark",
+    "web": { "bundler": "metro", "output": "static" },
+    "plugins": ["expo-router"],
+    "experiments": { "typedRoutes": true }
+  }
+}

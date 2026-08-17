@@ -1,0 +1,33 @@
+generator client { provider = "prisma-client-js" }
+datasource db { provider = "postgresql" url = env("DATABASE_URL") }
+
+model GameRoom {
+  id String @id
+  code String @unique
+  status String
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+  players PlayerSeat[]
+  game Game?
+}
+model PlayerSeat {
+  id String @id @default(uuid())
+  roomId String
+  room GameRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  guestPublicId String
+  displayName String
+  reconnectTokenHash String
+  seatNumber Int
+  connected Boolean @default(false)
+  @@unique([roomId, seatNumber])
+}
+model Game {
+  id String @id @default(uuid())
+  roomId String @unique
+  room GameRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  state Json
+  version Int @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  finishedAt DateTime?
+}

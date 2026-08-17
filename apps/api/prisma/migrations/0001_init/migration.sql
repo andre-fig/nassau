@@ -1,0 +1,26 @@
+CREATE TABLE "GameRoom" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "code" TEXT NOT NULL UNIQUE,
+  "status" TEXT NOT NULL,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "expiresAt" TIMESTAMP(3) NOT NULL
+);
+CREATE TABLE "PlayerSeat" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "roomId" TEXT NOT NULL REFERENCES "GameRoom"("id") ON DELETE CASCADE,
+  "guestPublicId" TEXT NOT NULL,
+  "displayName" TEXT NOT NULL,
+  "reconnectTokenHash" TEXT NOT NULL,
+  "seatNumber" INTEGER NOT NULL,
+  "connected" BOOLEAN NOT NULL DEFAULT false,
+  UNIQUE("roomId", "seatNumber")
+);
+CREATE TABLE "Game" (
+  "id" TEXT NOT NULL PRIMARY KEY,
+  "roomId" TEXT NOT NULL UNIQUE REFERENCES "GameRoom"("id") ON DELETE CASCADE,
+  "state" JSONB NOT NULL,
+  "version" INTEGER NOT NULL DEFAULT 1,
+  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  "updatedAt" TIMESTAMP(3) NOT NULL,
+  "finishedAt" TIMESTAMP(3)
+);
