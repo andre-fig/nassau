@@ -499,7 +499,7 @@ function GameScreen({
       {message ? <Text style={styles.error}>{message}</Text> : null}
       <Text style={styles.stock}>
         Estoque oculto: {view.public.stockRemaining} itens · Trilhas esgotadas:{" "}
-        {view.public.emptyTracks.length}/2
+        {view.public.emptyTracks.length}/3
       </Text>
     </Shell>
   );
