@@ -408,7 +408,7 @@ function GameScreen({
     .filter((item) => !selectedPortTypes.has(item.type))
     .slice(0, selectedPortGoods.length);
   const canTradePort =
-    selectedPortGoods.length >= 2 &&
+    selectedPortGoods.length >= 1 &&
     selectedPortTypes.size === selectedPortGoods.length &&
     tradeGiveGoods.length === selectedPortGoods.length;
   const allSelectedCrew =
@@ -432,6 +432,7 @@ function GameScreen({
         items={view.public.port}
         selectedItemIds={selectedPortIds}
         onSelectItem={(item) => {
+          setSelectedType(undefined);
           if (item.type === "crew") {
             setSelectedPortIds(
               view.public.port
@@ -473,7 +474,10 @@ function GameScreen({
         goods={current.goods}
         crew={current.crew}
         selected={selectedType}
-        onSelect={setSelectedType}
+        onSelect={(type) => {
+          setSelectedPortIds([]);
+          setSelectedType(type);
+        }}
       />
       <View style={styles.actionBar}>
         <GameActionButton
@@ -517,6 +521,7 @@ function GameScreen({
             if (selectedType) setSellType(selectedType);
           }}
           disabled={
+            selectedPortItems.length > 0 ||
             !selectedType ||
             current.goods.filter((item) => item.type === selectedType).length <
               (selectedType ? GOOD_INFO[selectedType].minimum : 1)
@@ -884,7 +889,7 @@ function OnlineMatch({
     .slice(0, selectedPortGoods.length);
   const canTradePort =
     myTurn &&
-    selectedPortGoods.length >= 2 &&
+    selectedPortGoods.length >= 1 &&
     selectedPortTypes.size === selectedPortGoods.length &&
     tradeGiveGoods.length === selectedPortGoods.length;
   const allSelectedCrew =
@@ -919,6 +924,7 @@ function OnlineMatch({
         items={view.public.port}
         selectedItemIds={selectedPortIds}
         onSelectItem={(item) => {
+          setSelected(undefined);
           if (item.type === "crew") {
             setSelectedPortIds(
               view.public.port
@@ -961,7 +967,10 @@ function OnlineMatch({
         goods={view.me.goods}
         crew={view.me.crew}
         selected={selected}
-        onSelect={setSelected}
+        onSelect={(type) => {
+          setSelectedPortIds([]);
+          setSelected(type);
+        }}
       />
       <View style={styles.actionBar}>
         <GameActionButton
@@ -1002,6 +1011,7 @@ function OnlineMatch({
           }}
           disabled={
             !myTurn ||
+            selectedPortItems.length > 0 ||
             !selected ||
             view.me.goods.filter((item) => item.type === selected).length <
               (selected ? GOOD_INFO[selected].minimum : 1)
