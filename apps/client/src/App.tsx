@@ -479,7 +479,7 @@ function GameScreen({
     <Shell>
       <OpponentHeader
         displayName={view.opponent?.displayName}
-        goodsCount={view.opponent?.goodsCount}
+        cardCount={view.opponent?.goodsCount}
         prestige={view.opponent?.prestige}
         crew={view.opponent?.crew}
       />
@@ -940,7 +940,7 @@ function OnlineMatch({
     <Shell>
       <OpponentHeader
         displayName={view.opponent?.displayName}
-        goodsCount={view.opponent?.goodsCount}
+        cardCount={view.opponent?.goodsCount}
         prestige={view.opponent?.prestige}
         crew={view.opponent?.crew}
       />

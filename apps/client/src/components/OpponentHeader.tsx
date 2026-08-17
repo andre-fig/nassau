@@ -6,15 +6,16 @@ const CARD_BACK = require("../../assets/cards/card-back.jpeg");
 
 export function OpponentHeader({
   displayName,
-  goodsCount,
+  cardCount,
   prestige,
   crew,
 }: {
   displayName?: string;
-  goodsCount?: number;
+  cardCount?: number;
   prestige?: number;
   crew?: number;
 }) {
+  const hiddenCardCount = Math.max(0, Math.floor(cardCount ?? 0));
   return (
     <View style={styles.header}>
       <View style={styles.identity}>
@@ -28,9 +29,9 @@ export function OpponentHeader({
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.cardsContent}
-        accessibilityLabel={`${goodsCount ?? 0} cartas ocultas do adversário`}
+        accessibilityLabel={`${hiddenCardCount} cartas ocultas do adversário`}
       >
-        {Array.from({ length: goodsCount ?? 0 }, (_, index) => (
+        {Array.from({ length: hiddenCardCount }, (_, index) => (
           <Image key={index} source={CARD_BACK} style={styles.card} />
         ))}
       </ScrollView>
