@@ -17,3 +17,4 @@ apps/unity/[Uu]ser[Ss]ettings/
 apps/unity/MemoryCaptures/
 apps/unity/*.csproj
 apps/unity/*.sln
+apps/unity/.vscode/
