@@ -26,7 +26,7 @@ namespace Nassau
 
         private void Start()
         {
-            font = Resources.GetBuiltinResource<Font>("Arial.ttf");
+            font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
             EnsureCamera();
             CreateCanvas();
             StartCoroutine(LoadingThenStart());
