@@ -77,7 +77,11 @@ namespace Nassau
             var root = Panel(canvas.transform, Navy);
             Stretch(root);
             var content = Panel(root.transform, new Color32(12, 42, 53, 245));
-            Stretch(content, 320, 320, 160, 160);
+            var contentRect = content.GetComponent<RectTransform>();
+            contentRect.anchorMin = new Vector2(0.12f, 0.14f);
+            contentRect.anchorMax = new Vector2(0.88f, 0.86f);
+            contentRect.offsetMin = Vector2.zero;
+            contentRect.offsetMax = Vector2.zero;
             Vertical(content, 16);
             Text(content.transform, "NASSAU", 42, Gold, TextAnchor.MiddleCenter);
             Text(content.transform, "PORTO DE NASSAU", 18, Paper, TextAnchor.MiddleCenter);
@@ -308,7 +312,7 @@ namespace Nassau
             canvas = canvasObject.AddComponent<Canvas>();
             canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             canvasObject.AddComponent<CanvasScaler>().uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-            canvasObject.GetComponent<CanvasScaler>().referenceResolution = new Vector2(1280, 800);
+            canvasObject.GetComponent<CanvasScaler>().referenceResolution = new Vector2(800, 1280);
             canvasObject.AddComponent<GraphicRaycaster>();
             var eventSystem = new GameObject("EventSystem");
             eventSystem.AddComponent<EventSystem>();
@@ -359,7 +363,17 @@ namespace Nassau
         }
 
         private static LayoutElement LayoutElement(GameObject objectToSize) => objectToSize.GetComponent<LayoutElement>() ?? objectToSize.AddComponent<LayoutElement>();
-        private static void Vertical(GameObject objectToLayout, float spacing) { var layout = objectToLayout.AddComponent<VerticalLayoutGroup>(); layout.spacing = spacing; layout.childControlWidth = true; layout.childControlHeight = false; layout.childForceExpandWidth = true; }
+        private static void Vertical(GameObject objectToLayout, float spacing)
+        {
+            var layout = objectToLayout.AddComponent<VerticalLayoutGroup>();
+            layout.spacing = spacing;
+            layout.padding = new RectOffset(36, 36, 32, 32);
+            layout.childAlignment = TextAnchor.UpperCenter;
+            layout.childControlWidth = true;
+            layout.childControlHeight = false;
+            layout.childForceExpandWidth = true;
+            layout.childForceExpandHeight = false;
+        }
         private static GameObject Row(Transform parent, float spacing) { var row = new GameObject("Row"); row.transform.SetParent(parent, false); var layout = row.AddComponent<HorizontalLayoutGroup>(); layout.spacing = spacing; layout.childControlWidth = false; layout.childControlHeight = true; layout.childForceExpandHeight = true; LayoutElement(row).preferredHeight = 145; return row; }
         private static void Stretch(GameObject objectToStretch, float left = 0, float right = 0, float top = 0, float bottom = 0) { Stretch(objectToStretch.GetComponent<RectTransform>(), left, right, top, bottom); }
         private static void Stretch(RectTransform rect, float left = 0, float right = 0, float top = 0, float bottom = 0) { rect.anchorMin = new Vector2(0, 0); rect.anchorMax = new Vector2(1, 1); rect.offsetMin = new Vector2(left, bottom); rect.offsetMax = new Vector2(-right, -top); }
