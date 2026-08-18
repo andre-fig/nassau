@@ -37,15 +37,37 @@ namespace Nassau
             var loading = new GameObject("Nassau Loading Video");
             var player = loading.AddComponent<VideoPlayer>();
             var audio = loading.AddComponent<AudioSource>();
+            RenderTexture renderTexture = null;
             player.playOnAwake = false;
             player.isLooping = true;
             player.audioOutputMode = VideoAudioOutputMode.AudioSource;
             player.SetTargetAudioSource(0, audio);
             player.clip = Resources.Load<VideoClip>("splash/loading-background");
-            if (player.clip != null) player.Play();
-            RenderLoading();
+            if (player.clip != null)
+            {
+                var width = player.clip.width > 0 ? (int)player.clip.width : 1920;
+                var height = player.clip.height > 0 ? (int)player.clip.height : 1080;
+                renderTexture = new RenderTexture(width, height, 0, RenderTextureFormat.ARGB32);
+                renderTexture.Create();
+                player.renderMode = VideoRenderMode.RenderTexture;
+                player.targetTexture = renderTexture;
+                player.aspectRatio = VideoAspectRatio.FitInside;
+                player.Prepare();
+            }
+            RenderLoading(renderTexture);
+            if (player.clip != null)
+            {
+                var elapsed = 0f;
+                while (!player.isPrepared && elapsed < 2f)
+                {
+                    elapsed += Time.unscaledDeltaTime;
+                    yield return null;
+                }
+                player.Play();
+            }
             yield return new WaitForSeconds(2.2f);
             Destroy(loading);
+            if (renderTexture != null) Destroy(renderTexture);
             StartOfflineGame();
         }
 
@@ -58,11 +80,23 @@ namespace Nassau
             RenderGame();
         }
 
-        private void RenderLoading()
+        private void RenderLoading(RenderTexture videoTexture)
         {
             ClearCanvas();
             var root = Panel(canvas.transform, Navy);
             Stretch(root);
+            if (videoTexture != null)
+            {
+                var videoObject = new GameObject("Loading Video Image");
+                videoObject.transform.SetParent(root.transform, false);
+                var videoImage = videoObject.AddComponent<RawImage>();
+                videoImage.texture = videoTexture;
+                videoImage.color = Color.white;
+                Stretch(videoImage.rectTransform);
+
+                var overlay = Panel(root.transform, new Color(0, 0, 0, 0.24f));
+                Stretch(overlay);
+            }
             var title = Text(root.transform, "NASSAU", 42, Gold, TextAnchor.MiddleCenter);
             LayoutElement(title.gameObject).flexibleHeight = 1;
             var subtitle = Text(root.transform, "Carregando o Porto de Nassau...", 18, Paper, TextAnchor.MiddleCenter);
