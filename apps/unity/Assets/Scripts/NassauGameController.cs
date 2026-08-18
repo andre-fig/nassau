@@ -68,7 +68,23 @@ namespace Nassau
             yield return new WaitForSeconds(2.2f);
             Destroy(loading);
             if (renderTexture != null) Destroy(renderTexture);
-            StartOfflineGame();
+            RenderMenu();
+        }
+
+        private void RenderMenu()
+        {
+            ClearCanvas();
+            var root = Panel(canvas.transform, Navy);
+            Stretch(root);
+            var content = Panel(root.transform, new Color32(12, 42, 53, 245));
+            Stretch(content, 320, 320, 160, 160);
+            Vertical(content, 16);
+            Text(content.transform, "NASSAU", 42, Gold, TextAnchor.MiddleCenter);
+            Text(content.transform, "PORTO DE NASSAU", 18, Paper, TextAnchor.MiddleCenter);
+            Text(content.transform, "Escolha como jogar", 16, Paper, TextAnchor.MiddleCenter);
+            ActionButton(content.transform, "JOGAR OFFLINE", new Color32(32, 137, 95, 255), true, StartOfflineGame);
+            ActionButton(content.transform, "JOGAR ONLINE", new Color32(82, 92, 96, 255), false, () => { });
+            Text(content.transform, "Modo online em desenvolvimento", 13, new Color32(170, 185, 185, 255), TextAnchor.MiddleCenter);
         }
 
         private void StartOfflineGame()
